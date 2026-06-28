@@ -89,7 +89,7 @@
     }
 
     main {
-      max-width: 720px;
+      max-width: 820px;
       margin: 0 auto;
       padding: 1.25rem 1rem 3rem;
     }
@@ -137,6 +137,11 @@
     }
 
     .delay-summary.on-time {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
+    }
+
+    .delay-summary.ahead {
       background: rgba(46, 204, 113, 0.15);
       color: var(--success);
     }
@@ -230,10 +235,10 @@
     .itinerary-header {
       color: var(--text-muted);
       display: grid;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       font-weight: 600;
-      gap: 0.5rem;
-      grid-template-columns: 36px 88px 1fr 80px;
+      gap: 0.4rem;
+      grid-template-columns: 32px 72px 72px 1fr 64px;
       letter-spacing: 0.04em;
       padding: 0 0.75rem 0.5rem;
       text-transform: uppercase;
@@ -245,8 +250,8 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       display: grid;
-      gap: 0.5rem 0.75rem;
-      grid-template-columns: 36px 88px 1fr 80px;
+      gap: 0.4rem 0.6rem;
+      grid-template-columns: 32px 72px 72px 1fr 64px;
       margin-bottom: 0.6rem;
       padding: 0.85rem 0.75rem;
       transition: box-shadow 0.2s, border-color 0.2s;
@@ -275,7 +280,7 @@
     .time-planned {
       color: var(--text-muted);
       display: block;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       text-decoration: line-through;
     }
 
@@ -284,21 +289,30 @@
     .time-adjusted {
       color: var(--text);
       display: block;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: 700;
     }
 
-    .time-adjusted.shifted { color: var(--accent); }
+    .time-adjusted.late { color: var(--delay); }
+    .time-adjusted.early { color: var(--success); }
 
-    .delay-badge {
-      background: rgba(225, 112, 85, 0.15);
+    .delta-badge {
       border-radius: 6px;
-      color: var(--delay);
       display: inline-block;
-      font-size: 0.68rem;
+      font-size: 0.65rem;
       font-weight: 700;
-      margin-top: 0.2rem;
-      padding: 0.1rem 0.35rem;
+      margin-top: 0.15rem;
+      padding: 0.08rem 0.3rem;
+    }
+
+    .delta-badge.late {
+      background: rgba(225, 112, 85, 0.15);
+      color: var(--delay);
+    }
+
+    .delta-badge.early {
+      background: rgba(46, 204, 113, 0.15);
+      color: var(--success);
     }
 
     .col-stop {
@@ -315,10 +329,9 @@
 
     .task-controls {
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.35rem;
-      grid-column: 2 / -1;
-      margin-top: 0.15rem;
+      flex-direction: column;
+      gap: 0.3rem;
+      margin-top: 0.25rem;
     }
 
     .task-controls.hidden { display: none; }
@@ -372,19 +385,23 @@
       box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
     }
 
-    @media (max-width: 560px) {
+    @media (max-width: 600px) {
       .itinerary-header { display: none; }
 
       .task-row {
-        grid-template-columns: 32px 1fr;
+        grid-template-columns: 28px 1fr 1fr;
       }
 
-      .time-col { grid-column: 2; }
+      .col-start { grid-column: 2; }
+      .col-end { grid-column: 3; }
 
-      .col-stop { grid-column: 2; }
+      .col-stop {
+        grid-column: 2 / -1;
+        margin-top: 0.15rem;
+      }
 
       .col-duration {
-        grid-column: 2;
+        grid-column: 2 / -1;
         text-align: left;
       }
 
@@ -393,7 +410,25 @@
         content: "Süre: ";
       }
 
-      .task-controls { grid-column: 2; }
+      .col-start::before {
+        color: var(--text-muted);
+        content: "Başlangıç";
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        margin-bottom: 0.1rem;
+        text-transform: uppercase;
+      }
+
+      .col-end::before {
+        color: var(--text-muted);
+        content: "Bitiş";
+        display: block;
+        font-size: 0.68rem;
+        font-weight: 600;
+        margin-bottom: 0.1rem;
+        text-transform: uppercase;
+      }
     }
   </style>
 </head>
@@ -471,12 +506,25 @@
       return 0;
     }
 
-    function formatDelay(mins) {
-      if (mins <= 0) return "";
-      if (mins < 60) return `+${mins} dk`;
-      const h = Math.floor(mins / 60);
-      const m = mins % 60;
-      return m ? `+${h}s ${m}dk` : `+${h} saat`;
+    function formatDelta(mins) {
+      if (mins === 0) return { text: "", type: "" };
+      const abs = Math.abs(mins);
+      let text;
+      if (abs < 60) {
+        text = `${mins > 0 ? "+" : "-"}${abs} dk`;
+      } else {
+        const h = Math.floor(abs / 60);
+        const m = abs % 60;
+        const sign = mins > 0 ? "+" : "-";
+        text = m ? `${sign}${h}s ${m}dk` : `${sign}${h} saat`;
+      }
+      return { text, type: mins > 0 ? "late" : "early" };
+    }
+
+    function formatDelaySummary(mins) {
+      if (mins === 0) return "Zamanında";
+      const { text } = formatDelta(mins);
+      return mins > 0 ? text : text;
     }
 
     function getDefaultDayState(day) {
@@ -532,57 +580,56 @@
       return state.days[dayId];
     }
 
-    function getLastContiguousCompleted(dayState, itemCount) {
-      let k = -1;
-      for (let i = 0; i < itemCount; i++) {
-        const item = dayState.items[String(i)];
-        if (item?.done && item?.actualEnd) k = i;
-        else break;
+    function getPlannedSlotDuration(dayItems, index) {
+      const durationMin = parseDuration(dayItems[index].duration);
+      if (durationMin > 0) return durationMin;
+      if (index < dayItems.length - 1) {
+        return timeToMinutes(dayItems[index + 1].time) - timeToMinutes(dayItems[index].time);
       }
-      return k;
+      return 0;
     }
 
     function computeSchedule(dayItems, dayState) {
       const n = dayItems.length;
-      const schedule = dayItems.map((item, i) => {
-        const durationMin = parseDuration(item.duration);
+      const schedule = [];
+
+      for (let i = 0; i < n; i++) {
+        const item = dayItems[i];
         const plannedStartMin = timeToMinutes(item.time);
-        const plannedEndMin = plannedStartMin + durationMin;
-        return {
+        const slotDuration = getPlannedSlotDuration(dayItems, i);
+        const plannedEndMin = plannedStartMin + slotDuration;
+        const itemState = dayState.items[String(i)];
+        const isDone = Boolean(itemState?.done && itemState?.actualEnd);
+
+        let adjustedStartMin;
+        if (i === 0) {
+          adjustedStartMin = plannedStartMin;
+        } else {
+          const prev = schedule[i - 1];
+          adjustedStartMin = prev.isDone
+            ? timeToMinutes(prev.actualEnd)
+            : timeToMinutes(prev.adjustedEnd);
+        }
+
+        let adjustedEndMin;
+        if (isDone) {
+          adjustedEndMin = timeToMinutes(itemState.actualEnd);
+        } else {
+          adjustedEndMin = adjustedStartMin + slotDuration;
+        }
+
+        schedule.push({
           index: i,
           plannedStart: item.time,
           plannedEnd: minutesToTime(plannedEndMin),
-          adjustedStart: item.time,
-          adjustedEnd: minutesToTime(plannedEndMin),
-          durationMin,
-          startDelayMin: 0,
-          isStartShifted: false
-        };
-      });
-
-      const lastDone = getLastContiguousCompleted(dayState, n);
-      if (lastDone === -1) return schedule;
-
-      for (let j = lastDone + 1; j < n; j++) {
-        const prevIdx = j - 1;
-        const prevPlannedEnd = timeToMinutes(dayItems[prevIdx].time) + parseDuration(dayItems[prevIdx].duration);
-        const gap = Math.max(timeToMinutes(dayItems[j].time) - prevPlannedEnd, 0);
-
-        let prevActualEndMin;
-        if (prevIdx <= lastDone) {
-          prevActualEndMin = timeToMinutes(dayState.items[String(prevIdx)].actualEnd);
-        } else {
-          prevActualEndMin = timeToMinutes(schedule[prevIdx].adjustedEnd);
-        }
-
-        const adjustedStartMin = prevActualEndMin + gap;
-        const durationMin = schedule[j].durationMin;
-        const adjustedEndMin = adjustedStartMin + durationMin;
-
-        schedule[j].adjustedStart = minutesToTime(adjustedStartMin);
-        schedule[j].adjustedEnd = minutesToTime(adjustedEndMin);
-        schedule[j].startDelayMin = adjustedStartMin - timeToMinutes(dayItems[j].time);
-        schedule[j].isStartShifted = schedule[j].startDelayMin !== 0;
+          adjustedStart: minutesToTime(adjustedStartMin),
+          adjustedEnd: minutesToTime(adjustedEndMin),
+          actualEnd: isDone ? itemState.actualEnd : null,
+          slotDuration,
+          isDone,
+          startDeltaMin: adjustedStartMin - plannedStartMin,
+          endDeltaMin: adjustedEndMin - plannedEndMin
+        });
       }
 
       return schedule;
@@ -594,15 +641,13 @@
       return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
     }
 
-    function getDayDelay(schedule, dayState, itemCount) {
-      const lastDone = getLastContiguousCompleted(dayState, itemCount);
-      if (lastDone === -1) return 0;
-      const nextIdx = lastDone + 1;
-      if (nextIdx >= itemCount) {
-        const last = schedule[lastDone];
-        return timeToMinutes(dayState.items[String(lastDone)].actualEnd) - timeToMinutes(last.plannedStart) - last.durationMin;
+    function getDayDelay(schedule) {
+      const nextIdx = schedule.findIndex((s) => !s.isDone);
+      if (nextIdx === -1) {
+        const last = schedule[schedule.length - 1];
+        return last ? last.endDeltaMin : 0;
       }
-      return schedule[nextIdx].startDelayMin;
+      return schedule[nextIdx].startDeltaMin;
     }
 
     function getNextUpIndex(dayState, itemCount) {
@@ -626,13 +671,18 @@
     }
 
     function defaultActualEnd(day, index, schedule) {
-      const item = day.items[index];
-      const slot = schedule[index];
-      const durationMin = slot.durationMin;
-      const startMin = slot.isStartShifted
-        ? timeToMinutes(slot.adjustedStart)
-        : timeToMinutes(item.time);
-      return durationMin ? minutesToTime(startMin + durationMin) : item.time;
+      return schedule[index].adjustedEnd;
+    }
+
+    function renderTimeCell(planned, adjusted, deltaMin) {
+      const showPlanned = deltaMin !== 0;
+      const delta = formatDelta(deltaMin);
+      const tone = deltaMin > 0 ? "late" : deltaMin < 0 ? "early" : "";
+      return `
+        <span class="time-planned${showPlanned ? "" : " hidden"}">${planned}</span>
+        <span class="time-adjusted${tone ? ` ${tone}` : ""}">${adjusted}</span>
+        ${delta.text ? `<span class="delta-badge ${delta.type}">${delta.text}</span>` : ""}
+      `;
     }
 
     function renderTaskRow(day, dayState, schedule, index) {
@@ -641,13 +691,7 @@
       const itemState = dayState.items[String(index)] || {};
       const isDone = Boolean(itemState.done);
       const isNext = getNextUpIndex(dayState, day.items.length) === index;
-      const plannedRef = slot.isStartShifted && !isDone ? slot.adjustedStart : item.time;
-      const displayTime = isDone
-        ? (itemState.actualEnd || item.time)
-        : (slot.isStartShifted ? slot.adjustedStart : item.time);
-      const showStrike = isDone
-        ? itemState.actualEnd !== item.time
-        : slot.isStartShifted;
+      const displayEnd = isDone ? (itemState.actualEnd || slot.adjustedEnd) : slot.adjustedEnd;
 
       return `
         <div class="task-row${isDone ? " done" : ""}${isNext ? " next-up" : ""}" data-index="${index}">
@@ -660,28 +704,26 @@
             data-day-id="${day.id}"
             data-index="${index}"
           />
-          <div class="time-col">
-            <span class="time-planned${showStrike ? "" : " hidden"}">${isDone ? item.time : plannedRef !== item.time ? item.time : plannedRef}</span>
-            <span class="time-adjusted${showStrike || slot.isStartShifted ? " shifted" : ""}">${displayTime}</span>
-            ${slot.isStartShifted && !isDone ? `<span class="delay-badge">${formatDelay(slot.startDelayMin)}</span>` : ""}
-            ${isDone && itemState.actualEnd ? `<span class="delay-badge">${formatDelay(timeToMinutes(itemState.actualEnd) - timeToMinutes(item.time))}</span>` : ""}
+          <div class="time-col col-start">
+            ${renderTimeCell(slot.plannedStart, slot.adjustedStart, slot.startDeltaMin)}
           </div>
-          <div class="col-stop">${renderStop(item)}</div>
-          <div class="col-duration">${item.duration || ""}</div>
-          <div class="task-controls${isDone ? "" : " hidden"}" data-controls="${index}">
-            <label>
-              <span style="font-size:0.78rem;color:var(--text-muted)">Bitiş:</span>
+          <div class="time-col col-end">
+            ${renderTimeCell(slot.plannedEnd, displayEnd, isDone ? slot.endDeltaMin : slot.endDeltaMin)}
+            <div class="task-controls${isDone ? "" : " hidden"}">
               <input
                 type="time"
                 class="time-input"
-                value="${itemState.actualEnd || item.time}"
+                value="${itemState.actualEnd || slot.adjustedEnd}"
+                aria-label="Bitiş saati"
                 data-action="set-end"
                 data-day-id="${day.id}"
                 data-index="${index}"
               />
-            </label>
-            <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}">Şimdi</button>
+              <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}">Şimdi</button>
+            </div>
           </div>
+          <div class="col-stop">${renderStop(item)}</div>
+          <div class="col-duration">${item.duration || ""}</div>
         </div>
       `;
     }
@@ -690,8 +732,9 @@
       const dayState = ensureDayState(day.id);
       const schedule = computeSchedule(day.items, dayState);
       const progress = getDayProgress(day, dayState);
-      const delayMin = getDayDelay(schedule, dayState, day.items.length);
-      const delayLabel = delayMin > 0 ? formatDelay(delayMin) : "Zamanında";
+      const delayMin = getDayDelay(schedule);
+      const delayLabel = formatDelaySummary(delayMin);
+      const delayClass = delayMin > 0 ? "" : delayMin < 0 ? " ahead" : " on-time";
       const isActive = state.activeDayId === day.id;
 
       return `
@@ -706,7 +749,7 @@
             <div class="day-header">
               <div class="day-title-row">
                 <h2 class="day-title">📅 ${day.title}</h2>
-                <span class="delay-summary${delayMin <= 0 ? " on-time" : ""}">${delayLabel}</span>
+                <span class="delay-summary${delayClass}">${delayLabel}</span>
               </div>
               <div class="progress-wrap">
                 <div class="progress-label">${progress.done} / ${progress.total} tamamlandı</div>
@@ -746,7 +789,8 @@
                 </div>
                 <div class="itinerary-header">
                   <span></span>
-                  <span>Saat</span>
+                  <span>Başlangıç</span>
+                  <span>Bitiş</span>
                   <span>Durak</span>
                   <span>Süre</span>
                 </div>

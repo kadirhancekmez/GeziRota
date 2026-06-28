@@ -1,4 +1,4 @@
-const CACHE = "gezi-rota-v4";
+const CACHE = "gezi-rota-v5";
 const ASSETS = [
   "./",
   "./index.html",

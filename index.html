@@ -120,11 +120,12 @@
 
     .save-status {
       color: var(--text-muted);
+      flex: 1 1 100%;
       font-size: 0.58rem;
       font-weight: 500;
-      line-height: 1.2;
-      max-width: 5.5rem;
-      text-align: right;
+      line-height: 1.25;
+      order: 4;
+      text-align: center;
     }
 
     body.viewer-mode .save-status {
@@ -1652,14 +1653,13 @@
       <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
       <div class="data-actions">
-        <button type="button" class="btn-data btn-save-now" data-action="save-now" aria-label="Kaydet"><span class="btn-label-long">Kaydet</span><span class="btn-label-short">Kaydet</span></button>
+        <button type="button" class="btn-data btn-save-now" data-action="save-now" aria-label="JSON olarak kaydet"><span class="btn-label-long">JSON kaydet</span><span class="btn-label-short">Kaydet</span></button>
         <button type="button" class="btn-data btn-share" data-action="share-link" aria-label="Link paylaş"><span class="btn-label-long">Link paylaş</span><span class="btn-label-short">Paylaş</span></button>
-        <button type="button" class="btn-data" data-action="export-json" aria-label="JSON yedek indir"><span class="btn-label-long">JSON yedek</span><span class="btn-label-short">JSON</span></button>
         <button type="button" class="btn-data" data-action="import-json" aria-label="JSON yedek yükle"><span class="btn-label-long">Yedek yükle</span><span class="btn-label-short">Yükle</span></button>
         <button type="button" class="btn-data" data-action="export-html" aria-label="HTML olarak kaydet"><span class="btn-label-long">HTML kaydet</span><span class="btn-label-short">HTML</span></button>
       </div>
       <input type="file" id="import-json-input" accept=".json,application/json" hidden aria-hidden="true" />
-      <span class="save-status" id="save-status" aria-live="polite"></span>
+      <span class="save-status" id="save-status">Veri tarayıcıda tutulmaz — JSON kaydet / yedek yükle</span>
     </div>
   </header>
   <main id="day-panels"></main>
@@ -1712,7 +1712,6 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
-    const STORAGE_KEY = "geziRota_v2";
     const STORAGE_VERSION = 3;
 
     const DEFAULT_DAYS = /*DEFAULT_DAYS_START*/[
@@ -2023,59 +2022,26 @@
       if (!parsed) return false;
       days = parsed.days;
       state = parsed.state;
-      if (parsed.embedId) localStorage.setItem(STORAGE_KEY + "_embedId", parsed.embedId);
       return true;
     }
 
-    function readStoredPayload() {
+    function clearLegacyStorage() {
       try {
-        let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!saved) {
-          const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
-          if (v1) saved = { ...v1, daysData: null };
-        }
-        return saved;
+        localStorage.removeItem("geziRota_v2");
+        localStorage.removeItem("geziRota_v1");
+        localStorage.removeItem("geziRota_v2_embedId");
       } catch (_) {
-        return null;
+        /* ignore */
       }
-    }
-
-    function stateFromSaved(saved, fallbackDays) {
-      const sourceDays = saved.daysData?.length ? saved.daysData : fallbackDays;
-      const nextState = {
-        activeDayId: saved.activeDayId && sourceDays.some((d) => d.id === saved.activeDayId)
-          ? saved.activeDayId
-          : sourceDays[0]?.id || null,
-        days: {}
-      };
-      sourceDays.forEach((day) => {
-        const savedDay = saved.days?.[day.id];
-        nextState.days[day.id] = savedDay
-          ? normalizeSavedDayState(savedDay, day)
-          : getDefaultDayState(day);
-        sanitizeDayCompletion(nextState.days[day.id], day.items.length);
-      });
-      return { days: sourceDays, state: nextState };
     }
 
     function loadState() {
-      const saved = readStoredPayload();
-      if (saved?.daysData?.length) {
-        const loaded = stateFromSaved(saved, days);
-        days = loaded.days;
-        return { state: loaded.state, persist: false };
-      }
-
       const embedded = getEmbeddedSnapshot();
-      const storedEmbedId = localStorage.getItem(STORAGE_KEY + "_embedId");
-      const embeddedId = embedded?.snapshotId || EMBEDDED_SNAPSHOT_ID;
-
-      if (embedded && embeddedId && storedEmbedId !== embeddedId) {
+      if (embedded) {
         const parsed = parseSnapshotPayload(embedded);
         if (parsed) {
           days = parsed.days;
-          if (parsed.embedId) localStorage.setItem(STORAGE_KEY + "_embedId", parsed.embedId);
-          return { state: parsed.state, persist: true };
+          return { state: parsed.state };
         }
       }
 
@@ -2086,14 +2052,7 @@
       days.forEach((day) => {
         defaults.days[day.id] = getDefaultDayState(day);
       });
-
-      if (saved) {
-        const loaded = stateFromSaved({ ...saved, daysData: days }, days);
-        days = loaded.days;
-        return { state: loaded.state, persist: false };
-      }
-
-      return { state: defaults, persist: false };
+      return { state: defaults };
     }
 
     function requireEdit() {
@@ -2120,57 +2079,13 @@
       });
     }
 
-    function formatSaveTime(iso) {
-      if (!iso) return "";
-      try {
-        const d = new Date(iso);
-        return d.toLocaleString("tr-TR", {
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-      } catch (_) {
-        return "";
-      }
-    }
-
-    function updateSaveStatus(iso) {
-      const el = document.getElementById("save-status");
-      if (!el || isViewerMode) return;
-      el.textContent = iso ? `Son kayıt: ${formatSaveTime(iso)}` : "";
-    }
-
     function saveState() {
-      if (isViewerMode) return;
-      const savedAt = new Date().toISOString();
-      const payload = {
-        ...state,
-        daysData: days,
-        savedAt,
-        version: STORAGE_VERSION
-      };
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-        updateSaveStatus(savedAt);
-      } catch (_) {
-        showToast("Kaydedilemedi — depolama dolu olabilir");
-      }
+      /* Oturum belleğinde tutulur; tarayıcı depolaması kullanılmaz. */
     }
 
     function manualSave() {
       if (!requireEdit()) return;
-      saveState();
-      showToast("Cihaza kaydedildi");
-    }
-
-    function setupAutoSave() {
-      document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden" && !isViewerMode) saveState();
-      });
-      window.addEventListener("pagehide", () => {
-        if (!isViewerMode) saveState();
-      });
+      exportJson();
     }
 
     function initViewerFromUrl() {
@@ -2201,11 +2116,10 @@
     }
 
     function bootstrapState() {
+      clearLegacyStorage();
       if (initViewerFromUrl()) return;
       const loaded = loadState();
       state = loaded.state;
-      if (loaded.persist) saveState();
-      else updateSaveStatus(readStoredPayload()?.savedAt);
     }
 
     function ensureDayState(dayId) {
@@ -2991,7 +2905,6 @@
     }
 
     function buildAdminSnapshot() {
-      saveState();
       return {
         kind: "admin-backup",
         version: STORAGE_VERSION,
@@ -3003,7 +2916,6 @@
     }
 
     function buildShareSnapshot() {
-      saveState();
       const snapshotId = generateSnapshotId();
       const shareDays = {};
       days.forEach((day) => {
@@ -3094,15 +3006,12 @@
       reader.onload = () => {
         try {
           const saved = JSON.parse(String(reader.result || ""));
-          const parsed = parseSnapshotPayload(saved);
-          if (!parsed) {
+          if (!parseSnapshotPayload(saved)) {
             showToast("Geçersiz yedek dosyası");
             return;
           }
           if (!window.confirm("Mevcut programın üzerine yazılsın mı?")) return;
-          days = parsed.days;
-          state = parsed.state;
-          saveState();
+          applySnapshotPayload(saved);
           renderApp();
           showToast("Yedek yüklendi");
         } catch (_) {
@@ -3160,10 +3069,6 @@
         }
         if (e.target.closest("[data-action=share-link]")) {
           shareLink();
-          return;
-        }
-        if (e.target.closest("[data-action=export-json]")) {
-          exportJson();
           return;
         }
         if (e.target.closest("[data-action=import-json]")) {
@@ -3310,7 +3215,6 @@
     }
 
     bootstrapState();
-    setupAutoSave();
     initTimePicker();
     renderApp();
 

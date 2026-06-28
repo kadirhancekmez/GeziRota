@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gezi Rota</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: #000;
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #000;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding: 0 1rem;
+    }
+
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+
+    .day-tab {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      color: #a0a0a0;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      padding: 1rem 1.25rem;
+      position: relative;
+      transition: color 0.2s;
+      white-space: nowrap;
+    }
+
+    .day-tab:hover {
+      color: #fff;
+    }
+
+    .day-tab.active {
+      color: #fff;
+    }
+
+    .day-tab.active::after {
+      background: #fff;
+      bottom: 0;
+      content: "";
+      height: 2px;
+      left: 1rem;
+      position: absolute;
+      right: 1rem;
+    }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 0 1.25rem 3rem;
+    }
+
+    .day-panel {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+
+    .day-panel.open {
+      max-height: 3000px;
+    }
+
+    .day-content {
+      padding-top: 1.5rem;
+    }
+
+    .day-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+    }
+
+    .itinerary-header,
+    .itinerary-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 96px;
+      gap: 0.75rem 1rem;
+      align-items: start;
+    }
+
+    .itinerary-header {
+      color: #a0a0a0;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      margin-bottom: 0;
+    }
+
+    .itinerary-row {
+      padding: 1rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      font-size: 0.95rem;
+    }
+
+    .itinerary-row:last-child {
+      border-bottom: none;
+    }
+
+    .col-time {
+      font-variant-numeric: tabular-nums;
+      color: #fff;
+    }
+
+    .col-stop a {
+      color: #fff;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+    }
+
+    .col-stop a:hover {
+      text-decoration-style: solid;
+    }
+
+    .col-duration {
+      color: #a0a0a0;
+      font-size: 0.85rem;
+      text-align: right;
+    }
+
+    @media (max-width: 520px) {
+      .itinerary-header {
+        display: none;
+      }
+
+      .itinerary-row {
+        grid-template-columns: 64px 1fr;
+        gap: 0.25rem 0.75rem;
+      }
+
+      .col-duration {
+        grid-column: 2;
+        text-align: left;
+        font-size: 0.8rem;
+        margin-top: -0.25rem;
+      }
+
+      .col-duration:not(:empty)::before {
+        content: "Süre: ";
+        color: #666;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="top-bar">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
+  </header>
+  <main id="day-panels"></main>
+
+  <script>
+    const days = [
+      {
+        id: "day1",
+        tabLabel: "1. Gün",
+        title: "📅 5 Temmuz Pazar – İstanbul ➔ Cunda",
+        items: [
+          { time: "05:00", stop: "İstanbul'dan çıkış", duration: "" },
+          { time: "09:30", stop: "Kahvaltı (Ayvalık / Küçükköy civarı)", duration: "45-60 dk" },
+          { time: "10:30", stop: "Küçükköy (taş sokaklar, sanat atölyeleri)", duration: "45-60 dk" },
+          { time: "11:30", stop: "Şeytan Sofrası", duration: "30-40 dk" },
+          { time: "12:15", stop: "🏖️ Sarımsaklı Halk Plajı (ücretsiz giriş, kum plaj, denize girme)", duration: "1-1,5 saat" },
+          { time: "13:50", stop: "Airbnb'ye hareket", duration: "" },
+          { time: "14:00", stop: "Airbnb Check-in", duration: "30 dk" },
+          { time: "15:00", stop: "Rahmi M. Koç Müzesi", duration: "45 dk" },
+          { time: "15:50", stop: "Sevim ve Necdet Kent Kitaplığı", duration: "20 dk" },
+          { time: "16:20", stop: "Cunda taş sokakları + meşhur börekçi", duration: "1 saat" },
+          { time: "17:30", stop: "Cunda sahili ve marina yürüyüşü", duration: "30 dk" },
+          { time: "18:00", stop: "Aşıklar Tepesi (gün batımı)", duration: "45-60 dk" },
+          { time: "19:15", stop: "Tekne turu (varsa)", duration: "60 dk" },
+          { time: "20:30", stop: "Deniz kenarında akşam yemeği", duration: "" },
+          { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş", duration: "" }
+        ]
+      }
+    ];
+
+    let activeDayId = null;
+
+    function renderStop(item) {
+      if (item.link) {
+        return `<a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.stop}</a>`;
+      }
+      return item.stop;
+    }
+
+    function renderRow(item) {
+      return `
+        <div class="itinerary-row">
+          <span class="col-time">${item.time}</span>
+          <span class="col-stop">${renderStop(item)}</span>
+          <span class="col-duration">${item.duration || ""}</span>
+        </div>
+      `;
+    }
+
+    function renderPanel(day) {
+      return `
+        <section
+          class="day-panel"
+          id="panel-${day.id}"
+          role="tabpanel"
+          aria-labelledby="tab-${day.id}"
+          hidden
+        >
+          <div class="day-content">
+            <h2 class="day-title">${day.title}</h2>
+            <div class="itinerary-header">
+              <span>Saat</span>
+              <span>Durak</span>
+              <span>Süre</span>
+            </div>
+            ${day.items.map(renderRow).join("")}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderTab(day, index) {
+      return `
+        <button
+          class="day-tab"
+          id="tab-${day.id}"
+          role="tab"
+          aria-controls="panel-${day.id}"
+          aria-selected="false"
+          data-day-id="${day.id}"
+          tabindex="${index === 0 ? "0" : "-1"}"
+        >${day.tabLabel}</button>
+      `;
+    }
+
+    function renderApp(data) {
+      const tabsEl = document.getElementById("tabs");
+      const panelsEl = document.getElementById("day-panels");
+
+      tabsEl.innerHTML = data.map(renderTab).join("");
+      panelsEl.innerHTML = data.map(renderPanel).join("");
+
+      tabsEl.querySelectorAll(".day-tab").forEach((tab) => {
+        tab.addEventListener("click", () => openDay(tab.dataset.dayId));
+        tab.addEventListener("keydown", (e) => {
+          const tabs = [...tabsEl.querySelectorAll(".day-tab")];
+          const i = tabs.indexOf(tab);
+          if (e.key === "ArrowRight" && i < tabs.length - 1) {
+            e.preventDefault();
+            tabs[i + 1].focus();
+            openDay(tabs[i + 1].dataset.dayId);
+          } else if (e.key === "ArrowLeft" && i > 0) {
+            e.preventDefault();
+            tabs[i - 1].focus();
+            openDay(tabs[i - 1].dataset.dayId);
+          }
+        });
+      });
+
+      if (data.length > 0) {
+        openDay(data[0].id);
+      }
+    }
+
+    function openDay(dayId) {
+      const isToggle = activeDayId === dayId;
+      const tabsEl = document.getElementById("tabs");
+
+      document.querySelectorAll(".day-tab").forEach((tab) => {
+        const selected = !isToggle && tab.dataset.dayId === dayId;
+        tab.classList.toggle("active", selected);
+        tab.setAttribute("aria-selected", String(selected));
+        tab.tabIndex = selected ? 0 : -1;
+      });
+
+      document.querySelectorAll(".day-panel").forEach((panel) => {
+        const match = !isToggle && panel.id === `panel-${dayId}`;
+        panel.classList.toggle("open", match);
+        panel.hidden = !match;
+      });
+
+      activeDayId = isToggle ? null : dayId;
+    }
+
+    renderApp(days);
+  </script>
+</body>
+</html>

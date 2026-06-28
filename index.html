@@ -2,24 +2,41 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#e6f4f1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Gezi Rota</title>
   <style>
     :root {
-      --bg: linear-gradient(160deg, #fff5e6 0%, #e8f7ff 50%, #fff0f5 100%);
-      --surface: rgba(255, 255, 255, 0.88);
-      --surface-solid: #ffffff;
-      --accent: #ff6b35;
-      --accent-2: #00b4d8;
-      --sun: #ffd166;
-      --text: #2d3436;
-      --text-muted: #636e72;
-      --success: #2ecc71;
-      --delay: #e17055;
-      --border: rgba(255, 107, 53, 0.15);
-      --shadow: 0 4px 24px rgba(255, 107, 53, 0.1);
+      --bg: linear-gradient(165deg, #e6f4f1 0%, #cce8f4 42%, #e2f3e8 100%);
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-solid: #fafffe;
+      --accent: #1f8a70;
+      --accent-2: #0284c7;
+      --accent-light: #5bbfa8;
+      --sun: #7ec8a3;
+      --text: #134e4a;
+      --text-muted: #5a7a72;
+      --success: #2d8a5e;
+      --delay: #c0564a;
+      --border: rgba(31, 138, 112, 0.16);
+      --shadow: 0 4px 24px rgba(31, 138, 112, 0.1);
       --radius: 16px;
       --radius-pill: 999px;
+      --accent-soft: rgba(31, 138, 112, 0.1);
+      --accent-soft-md: rgba(31, 138, 112, 0.18);
+      --accent-border: rgba(31, 138, 112, 0.35);
+      --accent-glow: rgba(31, 138, 112, 0.32);
+      --accent-2-soft: rgba(2, 132, 199, 0.1);
+      --accent-2-soft-md: rgba(2, 132, 199, 0.18);
+      --accent-2-border: rgba(2, 132, 199, 0.35);
+      --accent-2-glow: rgba(2, 132, 199, 0.22);
+      --delay-soft: rgba(192, 86, 74, 0.12);
+      --delay-border: rgba(192, 86, 74, 0.38);
+      --success-soft: rgba(45, 138, 94, 0.14);
+      --success-border: rgba(45, 138, 94, 0.28);
+      --focus-ring: rgba(2, 132, 199, 0.18);
     }
 
     *, *::before, *::after {
@@ -35,6 +52,8 @@
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       line-height: 1.5;
       min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+      padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     .top-bar {
@@ -49,15 +68,23 @@
       padding: 0.75rem 1rem;
     }
 
-    .tabs {
+    .tabs-bar {
+      align-items: center;
       display: flex;
       gap: 0.5rem;
+      margin: 0 auto;
+      max-width: 720px;
+    }
+
+    .tabs {
+      display: flex;
+      flex: 1;
+      gap: 0.5rem;
       justify-content: center;
+      min-width: 0;
       overflow-x: auto;
       scrollbar-width: none;
       -ms-overflow-style: none;
-      max-width: 720px;
-      margin: 0 auto;
     }
 
     .tabs::-webkit-scrollbar { display: none; }
@@ -78,20 +105,59 @@
     }
 
     .day-tab:hover {
-      background: rgba(255, 107, 53, 0.08);
+      background: var(--accent-soft);
       color: var(--accent);
     }
 
     .day-tab.active {
       background: var(--accent);
       color: #fff;
-      box-shadow: 0 2px 12px rgba(255, 107, 53, 0.35);
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .btn-add-day {
+      background: var(--accent-soft);
+      border: 2px dashed var(--accent-border);
+      border-radius: var(--radius-pill);
+      color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.45rem 0.85rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-add-day:hover {
+      background: var(--accent-soft-md);
+      border-color: var(--accent);
+    }
+
+    .btn-delete-day {
+      background: transparent;
+      border: 1px solid var(--delay-border);
+      border-radius: var(--radius-pill);
+      color: var(--delay);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+    }
+
+    .btn-delete-day:hover { background: var(--delay-soft); }
+
+    .btn-delete-day:disabled {
+      cursor: default;
+      opacity: 0.35;
     }
 
     main {
-      max-width: 820px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 1.25rem 1rem 3rem;
+      padding: 0.75rem 0.5rem calc(4rem + env(safe-area-inset-bottom, 0));
     }
 
     .day-panel { display: none; }
@@ -107,27 +173,67 @@
     }
 
     .day-header {
-      background: linear-gradient(135deg, rgba(255, 107, 53, 0.12), rgba(0, 180, 216, 0.12));
-      padding: 1.25rem 1.25rem 1rem;
+      background: linear-gradient(135deg, var(--accent-soft-md), var(--accent-2-soft));
+      padding: 0.75rem 1rem 0.65rem;
     }
 
     .day-title-row {
       align-items: flex-start;
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem 1rem;
+      gap: 0.35rem 0.75rem;
       justify-content: space-between;
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.5rem;
     }
 
     .day-title {
-      font-size: 1.2rem;
+      font-size: 1.05rem;
       font-weight: 700;
-      line-height: 1.35;
+      line-height: 1.3;
+    }
+
+    .day-title-edit {
+      align-items: center;
+      display: flex;
+      flex: 1;
+      gap: 0.35rem;
+      min-width: 0;
+    }
+
+    .day-title-icon {
+      flex-shrink: 0;
+      font-size: 1.05rem;
+      line-height: 1;
+    }
+
+    .day-title-input {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--accent-2-border);
+      border-radius: 8px;
+      color: var(--text);
+      flex: 1;
+      font-family: inherit;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      min-width: 0;
+      padding: 0.35rem 0.55rem;
+      width: 100%;
+    }
+
+    .day-title-input:focus {
+      border-color: var(--accent-2);
+      box-shadow: 0 0 0 3px var(--focus-ring);
+      outline: none;
+    }
+
+    .day-title-input::placeholder {
+      color: var(--text-muted);
+      font-weight: 500;
     }
 
     .delay-summary {
-      background: rgba(225, 112, 85, 0.15);
+      background: var(--delay-soft);
       border-radius: var(--radius-pill);
       color: var(--delay);
       font-size: 0.8rem;
@@ -137,12 +243,12 @@
     }
 
     .delay-summary.on-time {
-      background: rgba(46, 204, 113, 0.15);
+      background: var(--success-soft);
       color: var(--success);
     }
 
     .delay-summary.ahead {
-      background: rgba(46, 204, 113, 0.15);
+      background: var(--success-soft);
       color: var(--success);
     }
 
@@ -150,20 +256,20 @@
 
     .progress-label {
       color: var(--text-muted);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 500;
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.25rem;
     }
 
     .progress-bar {
       background: rgba(0, 0, 0, 0.06);
       border-radius: var(--radius-pill);
-      height: 8px;
+      height: 6px;
       overflow: hidden;
     }
 
     .progress-fill {
-      background: linear-gradient(90deg, var(--accent), var(--sun));
+      background: linear-gradient(90deg, var(--accent), var(--accent-light), var(--sun));
       border-radius: var(--radius-pill);
       height: 100%;
       transition: width 0.35s ease;
@@ -172,7 +278,7 @@
     .sub-bar-wrap {
       display: flex;
       justify-content: center;
-      padding: 1rem 1rem 0;
+      padding: 0.5rem 0.75rem 0;
     }
 
     .sub-bar {
@@ -200,170 +306,358 @@
 
     .sub-tab.active {
       background: var(--surface-solid);
-      box-shadow: 0 2px 8px rgba(0, 180, 216, 0.2);
+      box-shadow: 0 2px 8px var(--accent-2-glow);
       color: var(--accent-2);
     }
 
-    .day-body { padding: 1rem 1.25rem 1.25rem; }
+    .day-body { padding: 0.5rem 0.75rem 0.75rem; }
 
     .view-panel { display: none; }
     .view-panel.active { display: block; }
 
-    .day-actions {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 0.75rem;
-    }
-
     .btn-reset {
       background: transparent;
-      border: 1px solid rgba(225, 112, 85, 0.4);
+      border: 1px solid var(--delay-border);
       border-radius: var(--radius-pill);
       color: var(--delay);
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       font-weight: 600;
-      padding: 0.35rem 0.85rem;
+      padding: 0.25rem 0.65rem;
+    }
+
+    .btn-reset:hover { background: var(--delay-soft); }
+
+    .day-actions {
+      align-items: center;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+      padding: 0 0.25rem;
+    }
+
+    .mode-toggle {
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: var(--radius-pill);
+      display: inline-flex;
+      gap: 0.2rem;
+      padding: 0.2rem;
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-pill);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.35rem 0.75rem;
       transition: all 0.2s;
     }
 
-    .btn-reset:hover {
-      background: rgba(225, 112, 85, 0.1);
+    .mode-btn.active {
+      background: var(--surface-solid);
+      box-shadow: 0 1px 6px rgba(0, 0, 0, 0.08);
+      color: var(--accent);
     }
 
-    .itinerary-header {
-      color: var(--text-muted);
-      display: grid;
-      font-size: 0.7rem;
-      font-weight: 600;
+    .mode-btn.active.edit-active { color: var(--accent-2); }
+
+    .day-actions-right {
+      display: flex;
       gap: 0.4rem;
-      grid-template-columns: 32px 72px 72px 1fr 64px;
-      letter-spacing: 0.04em;
-      padding: 0 0.75rem 0.5rem;
+    }
+
+    .btn-add {
+      background: var(--accent-2-soft);
+      border: 1px solid var(--accent-2-border);
+      border-radius: var(--radius-pill);
+      color: var(--accent-2);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.65rem;
+    }
+
+    .btn-add:hover { background: var(--accent-2-soft-md); }
+
+    .itinerary-wrap {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .itinerary-table {
+      border-collapse: collapse;
+      table-layout: fixed;
+      width: 100%;
+    }
+
+    .itinerary-table thead th {
+      background: rgba(0, 0, 0, 0.03);
+      color: var(--text-muted);
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.45rem 0.4rem;
+      text-align: left;
       text-transform: uppercase;
     }
 
-    .task-row {
-      align-items: start;
-      background: var(--surface-solid);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      display: grid;
-      gap: 0.4rem 0.6rem;
-      grid-template-columns: 32px 72px 72px 1fr 64px;
-      margin-bottom: 0.6rem;
-      padding: 0.85rem 0.75rem;
-      transition: box-shadow 0.2s, border-color 0.2s;
+    .itinerary-table tbody tr {
+      border-top: 1px solid var(--border);
+      height: 42px;
     }
 
-    .task-row.next-up {
-      border-color: var(--accent-2);
-      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
+    .itinerary-table tbody tr.next-up {
+      background: var(--accent-2-soft);
+      box-shadow: inset 3px 0 0 var(--accent-2);
     }
 
-    .task-row.done {
-      border-color: rgba(46, 204, 113, 0.35);
-      opacity: 0.88;
+    .itinerary-table tbody tr.done {
+      background: var(--success-soft);
     }
 
-    .task-check {
-      accent-color: var(--success);
-      cursor: pointer;
-      height: 18px;
-      margin-top: 2px;
-      width: 18px;
+    .itinerary-table td {
+      font-size: 0.82rem;
+      padding: 0.3rem 0.4rem;
+      vertical-align: middle;
     }
 
-    .time-col { font-variant-numeric: tabular-nums; }
-
-    .time-planned {
-      color: var(--text-muted);
-      display: block;
-      font-size: 0.72rem;
-      text-decoration: line-through;
-    }
-
-    .time-planned.hidden { display: none; }
-
-    .time-adjusted {
-      color: var(--text);
-      display: block;
-      font-size: 0.88rem;
-      font-weight: 700;
-    }
-
-    .time-adjusted.late { color: var(--delay); }
-    .time-adjusted.early { color: var(--success); }
-
-    .delta-badge {
-      border-radius: 6px;
-      display: inline-block;
-      font-size: 0.65rem;
-      font-weight: 700;
-      margin-top: 0.15rem;
-      padding: 0.08rem 0.3rem;
-    }
-
-    .delta-badge.late {
-      background: rgba(225, 112, 85, 0.15);
-      color: var(--delay);
-    }
-
-    .delta-badge.early {
-      background: rgba(46, 204, 113, 0.15);
-      color: var(--success);
-    }
+    .col-check { text-align: center; width: 28px; }
+    .col-start { overflow: visible; width: 96px; }
+    .col-end { overflow: visible; width: 132px; }
+    .col-duration { color: var(--text-muted); font-size: 0.72rem; text-align: right; width: 72px; }
+    .col-edit { text-align: center; width: 56px; }
+    .col-sort { text-align: center; width: 52px; }
 
     .col-stop {
-      font-size: 0.92rem;
-      min-width: 0;
+      font-size: 0.82rem;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .col-stop a {
       color: var(--accent-2);
       text-decoration: underline;
       text-decoration-style: dotted;
-      text-underline-offset: 3px;
     }
 
-    .task-controls {
+    .task-check {
+      accent-color: var(--success);
+      cursor: pointer;
+      height: 20px;
+      width: 20px;
+    }
+
+    .time-chip,
+    .btn-now,
+    .btn-icon,
+    .mode-btn,
+    .sub-tab,
+    .day-tab,
+    .btn-reset,
+    .btn-add,
+    .btn-add-day,
+    .btn-delete-day {
+      touch-action: manipulation;
+    }
+
+    .time-cell {
+      align-items: center;
       display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-      margin-top: 0.25rem;
+      flex-wrap: nowrap;
+      gap: 0.2rem;
+      white-space: nowrap;
     }
 
-    .task-controls.hidden { display: none; }
+    .time-val {
+      flex-shrink: 0;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      line-height: 1;
+      white-space: nowrap;
+    }
 
-    .time-input {
-      border: 1px solid var(--border);
-      border-radius: 8px;
+    .time-val.late { color: var(--delay); }
+    .time-val.early { color: var(--success); }
+
+    .delta-inline {
+      border-radius: 4px;
+      flex-shrink: 0;
+      font-size: 0.58rem;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0.1rem 0.25rem;
+      white-space: nowrap;
+    }
+
+    .delta-inline.late { background: var(--delay-soft); color: var(--delay); }
+    .delta-inline.early { background: var(--success-soft); color: var(--success); }
+
+    .next-day-tag {
+      color: var(--text-muted);
+      font-size: 0.62em;
+      font-weight: 700;
+      margin-left: 0.1rem;
+      vertical-align: super;
+    }
+
+    .time-chip {
+      background: var(--accent-2-soft);
+      border: 1px solid var(--accent-2-border);
+      border-radius: 6px;
       color: var(--text);
+      cursor: pointer;
       font-family: inherit;
-      font-size: 0.85rem;
-      padding: 0.3rem 0.5rem;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0.2rem 0.35rem;
     }
+
+    .time-chip:hover { background: var(--accent-2-soft-md); }
 
     .btn-now {
       background: var(--accent-2);
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 0.6rem;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0.22rem 0.3rem;
+    }
+
+    .btn-now:hover { opacity: 0.85; }
+
+    .btn-icon {
+      align-items: center;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: inline-flex;
+      font-family: inherit;
+      font-size: 0.75rem;
+      justify-content: center;
+      line-height: 1;
+      padding: 0.2rem 0.35rem;
+      transition: all 0.15s;
+    }
+
+    .btn-icon .btn-svg {
+      display: block;
+      flex-shrink: 0;
+      height: 14px;
+      width: 14px;
+    }
+
+    .btn-icon-edit:hover,
+    .btn-icon.btn-icon-edit:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-icon:hover {
+      background: var(--accent-2-soft);
+      border-color: var(--accent-2);
+      color: var(--accent-2);
+    }
+
+    .btn-icon:disabled {
+      cursor: default;
+      opacity: 0.3;
+    }
+
+    .row-actions {
+      display: flex;
+      gap: 2px;
+      justify-content: center;
+    }
+
+    .btn-icon-delete:hover,
+    .btn-icon.btn-icon-delete:hover:not(:disabled) {
+      background: var(--delay-soft);
+      border-color: var(--delay);
+      color: var(--delay);
+    }
+
+    .sort-btns {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .sort-btns .btn-icon {
+      font-size: 0.6rem;
+      padding: 0.1rem 0.3rem;
+    }
+
+    .edit-sheet-form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      padding: 1rem 1.25rem 1.5rem;
+    }
+
+    .edit-sheet-form label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.78rem;
+      font-weight: 600;
+      gap: 0.3rem;
+    }
+
+    .edit-sheet-form input {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.65rem;
+    }
+
+    .edit-sheet-actions {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: flex-end;
+      margin-top: 0.25rem;
+    }
+
+    .btn-save {
+      background: var(--accent);
       border: none;
       border-radius: 8px;
       color: #fff;
       cursor: pointer;
       font-family: inherit;
-      font-size: 0.78rem;
+      font-size: 0.85rem;
       font-weight: 600;
-      padding: 0.35rem 0.65rem;
-      transition: opacity 0.2s;
+      padding: 0.45rem 1rem;
     }
 
-    .btn-now:hover { opacity: 0.85; }
-
-    .col-duration {
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
       color: var(--text-muted);
-      font-size: 0.82rem;
-      text-align: right;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      padding: 0.45rem 1rem;
     }
 
     .notes-area {
@@ -382,93 +676,554 @@
     .notes-area:focus {
       border-color: var(--accent-2);
       outline: none;
-      box-shadow: 0 0 0 3px rgba(0, 180, 216, 0.15);
+      box-shadow: 0 0 0 3px var(--focus-ring);
     }
 
-    @media (max-width: 600px) {
-      .itinerary-header { display: none; }
+    .time-picker-overlay {
+      inset: 0;
+      position: fixed;
+      z-index: 100;
+    }
 
-      .task-row {
-        grid-template-columns: 28px 1fr 1fr;
+    .time-picker-overlay.hidden {
+      display: none;
+    }
+
+    .time-picker-backdrop {
+      background: rgba(19, 78, 74, 0.45);
+      inset: 0;
+      position: absolute;
+    }
+
+    .time-picker-sheet {
+      background: var(--surface-solid);
+      border-radius: 20px 20px 0 0;
+      bottom: 0;
+      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.15);
+      left: 0;
+      max-height: 70vh;
+      position: absolute;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .time-picker-header {
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-shrink: 0;
+      font-weight: 700;
+      justify-content: space-between;
+      padding: 1rem 1.25rem 0.75rem;
+    }
+
+    .time-picker-close {
+      background: rgba(0, 0, 0, 0.05);
+      border: none;
+      border-radius: 50%;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      height: 32px;
+      line-height: 1;
+      width: 32px;
+    }
+
+    .time-picker-grid {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: repeat(4, 1fr);
+      overflow-y: auto;
+      padding: 1rem 1.25rem 1.5rem;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .time-option {
+      background: rgba(0, 0, 0, 0.04);
+      border: 2px solid transparent;
+      border-radius: 10px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.95rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      padding: 0.65rem 0.25rem;
+      transition: all 0.15s;
+    }
+
+    .time-option:hover {
+      background: var(--accent-2-soft);
+      border-color: var(--accent-2-border);
+    }
+
+    .time-option.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    @media (min-width: 600px) {
+      .time-picker-sheet {
+        border-radius: 16px;
+        bottom: auto;
+        left: 50%;
+        max-width: 360px;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
       }
 
-      .col-start { grid-column: 2; }
-      .col-end { grid-column: 3; }
+      .time-picker-grid {
+        grid-template-columns: repeat(5, 1fr);
+        max-height: 320px;
+      }
+    }
 
-      .col-stop {
-        grid-column: 2 / -1;
-        margin-top: 0.15rem;
+    @media (max-width: 640px) {
+      .top-bar {
+        padding: 0.6rem 0.75rem;
+        padding-top: calc(0.6rem + env(safe-area-inset-top, 0));
       }
 
-      .col-duration {
-        grid-column: 2 / -1;
-        text-align: left;
+      .day-tab {
+        min-height: 40px;
+        padding: 0.5rem 1rem;
       }
 
-      .col-duration:not(:empty)::before {
+      .tabs {
+        justify-content: flex-start;
+        padding-bottom: 0.15rem;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .btn-add-day {
+        font-size: 0.78rem;
+        min-height: 40px;
+        padding: 0.45rem 0.7rem;
+      }
+
+      main {
+        padding-left: 0.4rem;
+        padding-right: 0.4rem;
+      }
+
+      .day-header { padding: 0.65rem 0.75rem 0.55rem; }
+
+      .day-title { font-size: 0.95rem; }
+
+      .day-title-input {
+        font-size: 16px;
+        min-height: 40px;
+      }
+
+      .day-body { padding: 0.4rem 0.5rem 0.65rem; }
+
+      .day-actions {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .mode-toggle { justify-content: center; width: 100%; }
+
+      .mode-btn {
+        flex: 1;
+        font-size: 0.8rem;
+        min-height: 40px;
+        padding: 0.5rem 0.75rem;
+        text-align: center;
+      }
+
+      .day-actions-right {
+        justify-content: stretch;
+        width: 100%;
+      }
+
+      .day-actions-right .btn-reset,
+      .day-actions-right .btn-add,
+      .day-actions-right .btn-delete-day {
+        flex: 1;
+        font-size: 0.8rem;
+        min-height: 40px;
+        padding: 0.5rem 0.75rem;
+        text-align: center;
+      }
+
+      .sub-tab {
+        flex: 1;
+        min-height: 40px;
+        padding: 0.5rem 1rem;
+        text-align: center;
+      }
+
+      .sub-bar { width: 100%; }
+
+      .itinerary-wrap {
+        background: transparent;
+        border: none;
+        overflow: visible;
+      }
+
+      .itinerary-table {
+        min-width: 0;
+        table-layout: auto;
+      }
+
+      .itinerary-table thead { display: none; }
+
+      .itinerary-table tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .itinerary-table tbody tr {
+        background: var(--surface-solid);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        display: grid;
+        gap: 0.35rem 0.6rem;
+        height: auto;
+        padding: 0.65rem 0.75rem;
+      }
+
+      .itinerary-table tbody tr.next-up {
+        background: var(--accent-2-soft);
+        box-shadow: inset 0 3px 0 0 var(--accent-2);
+      }
+
+      .itinerary-table tbody tr.done {
+        background: var(--success-soft);
+        border-color: var(--success-border);
+      }
+
+      .itinerary-table td {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        justify-content: space-between;
+        overflow: visible;
+        padding: 0.2rem 0;
+        width: auto !important;
+      }
+
+      .itinerary-table td[data-label]::before {
         color: var(--text-muted);
-        content: "Süre: ";
-      }
-
-      .col-start::before {
-        color: var(--text-muted);
-        content: "Başlangıç";
-        display: block;
-        font-size: 0.68rem;
-        font-weight: 600;
-        margin-bottom: 0.1rem;
+        content: attr(data-label);
+        flex-shrink: 0;
+        font-size: 0.65rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
         text-transform: uppercase;
       }
 
-      .col-end::before {
-        color: var(--text-muted);
-        content: "Bitiş";
-        display: block;
-        font-size: 0.68rem;
-        font-weight: 600;
-        margin-bottom: 0.1rem;
-        text-transform: uppercase;
+      /* Kullanım modu kart grid */
+      .itinerary-table.mode-usage tbody tr {
+        grid-template-columns: auto 1fr;
+        grid-template-areas:
+          "check stop"
+          "start start"
+          "end end"
+          "duration duration";
       }
+
+      .mode-usage .col-check {
+        align-self: start;
+        grid-area: check;
+        justify-content: flex-start;
+        padding-top: 0.15rem;
+      }
+
+      .mode-usage .col-check::before { display: none; }
+
+      .mode-usage .col-check .task-check {
+        height: 24px;
+        width: 24px;
+      }
+
+      .mode-usage .col-stop {
+        font-size: 0.88rem;
+        font-weight: 600;
+        grid-area: stop;
+        justify-content: flex-start;
+        line-height: 1.35;
+        white-space: normal;
+      }
+
+      .mode-usage .col-stop::before { display: none; }
+
+      .mode-usage .col-start { grid-area: start; }
+      .mode-usage .col-end { grid-area: end; }
+      .mode-usage .col-duration { grid-area: duration; }
+
+      /* Düzenleme modu kart grid */
+      .itinerary-table.mode-edit tbody tr {
+        grid-template-columns: 1fr 1fr auto auto;
+        grid-template-areas:
+          "stop stop stop stop"
+          "start end edit sort"
+          "duration duration duration duration";
+      }
+
+      .mode-edit .col-stop {
+        border-bottom: 1px solid var(--border);
+        font-size: 0.88rem;
+        font-weight: 600;
+        grid-area: stop;
+        justify-content: flex-start;
+        line-height: 1.35;
+        margin-bottom: 0.15rem;
+        padding-bottom: 0.45rem;
+        white-space: normal;
+      }
+
+      .mode-edit .col-stop::before { display: none; }
+
+      .mode-edit .col-start { grid-area: start; }
+      .mode-edit .col-end { grid-area: end; }
+      .mode-edit .col-edit { grid-area: edit; justify-content: center; }
+      .mode-edit .col-edit::before { display: none; }
+      .mode-edit .col-sort { grid-area: sort; justify-content: center; }
+      .mode-edit .col-sort::before { display: none; }
+      .mode-edit .col-duration { grid-area: duration; }
+
+      .time-cell {
+        flex: 1;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .time-chip {
+        font-size: 0.85rem;
+        min-height: 36px;
+        min-width: 64px;
+        padding: 0.4rem 0.55rem;
+      }
+
+      .btn-now {
+        font-size: 0.72rem;
+        min-height: 36px;
+        padding: 0.4rem 0.55rem;
+      }
+
+      .btn-icon {
+        min-height: 36px;
+        min-width: 36px;
+        padding: 0.35rem 0.5rem;
+      }
+
+      .sort-btns {
+        flex-direction: row;
+        gap: 0.25rem;
+      }
+
+      .time-picker-grid {
+        grid-template-columns: repeat(3, 1fr);
+        max-height: 55vh;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0));
+      }
+
+      .time-option {
+        min-height: 44px;
+        padding: 0.75rem 0.25rem;
+      }
+
+      .edit-sheet-form {
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0));
+      }
+
+      .edit-sheet-form input {
+        font-size: 16px;
+        min-height: 44px;
+      }
+
+      .btn-save,
+      .btn-cancel {
+        min-height: 44px;
+        padding: 0.55rem 1.25rem;
+      }
+
+      .edit-sheet-actions {
+        flex-direction: column-reverse;
+      }
+
+      .edit-sheet-actions .btn-save,
+      .edit-sheet-actions .btn-cancel {
+        width: 100%;
+      }
+
+      .time-picker-close {
+        height: 40px;
+        width: 40px;
+      }
+
+      .notes-area {
+        font-size: 16px;
+        min-height: 180px;
+      }
+
+      .credit-badge {
+        bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
+        font-size: 0.6rem;
+        left: 50%;
+        max-width: calc(100vw - 2rem);
+        right: auto;
+        text-align: center;
+        transform: translateX(-50%);
+        white-space: nowrap;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .mode-usage .col-start,
+      .mode-usage .col-end {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+      }
+
+      .mode-usage .col-start .time-cell,
+      .mode-usage .col-end .time-cell {
+        justify-content: flex-start;
+        width: 100%;
+      }
+
+      .time-picker-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    .credit-badge {
+      background: var(--surface);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      bottom: calc(0.75rem + env(safe-area-inset-bottom, 0));
+      box-shadow: var(--shadow);
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 500;
+      padding: 0.35rem 0.75rem;
+      position: fixed;
+      right: 0.75rem;
+      z-index: 15;
+    }
+
+    .credit-badge strong {
+      color: var(--text);
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
   <header class="top-bar">
-    <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
+    <div class="tabs-bar" id="tabs-bar">
+      <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
+      <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
+    </div>
   </header>
   <main id="day-panels"></main>
 
-  <script>
-    const STORAGE_KEY = "geziRota_v1";
+  <div id="time-picker" class="time-picker-overlay hidden" aria-hidden="true" role="dialog" aria-label="Saat seç">
+    <div class="time-picker-backdrop" data-action="close-picker"></div>
+    <div class="time-picker-sheet">
+      <div class="time-picker-header">
+        <span id="time-picker-title">Bitiş saati seç</span>
+        <button type="button" class="time-picker-close" data-action="close-picker" aria-label="Kapat">✕</button>
+      </div>
+      <div class="time-picker-grid" id="time-picker-grid"></div>
+    </div>
+  </div>
 
-    const days = [
+  <div id="edit-task-sheet" class="time-picker-overlay hidden" aria-hidden="true" role="dialog" aria-label="Durak düzenle">
+    <div class="time-picker-backdrop" data-action="close-edit"></div>
+    <div class="time-picker-sheet">
+      <div class="time-picker-header">
+        <span>Durak düzenle</span>
+        <button type="button" class="time-picker-close" data-action="close-edit" aria-label="Kapat">✕</button>
+      </div>
+      <form class="edit-sheet-form" id="edit-task-form">
+        <label>Durak
+          <input type="text" id="edit-stop" required />
+        </label>
+        <div class="edit-sheet-actions">
+          <button type="button" class="btn-cancel" data-action="close-edit">İptal</button>
+          <button type="submit" class="btn-save">Kaydet</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <p class="credit-badge"><strong>Kadirhan Çekmez</strong> tarafından hazırlanmıştır</p>
+
+  <script>
+    const STORAGE_KEY = "geziRota_v2";
+
+    const DEFAULT_DAYS = [
       {
         id: "day1",
         tabLabel: "1. Gün",
         title: "5 Temmuz Pazar – İstanbul ➔ Cunda",
         notes: "",
         items: [
-          { time: "05:00", stop: "İstanbul'dan çıkış", duration: "" },
-          { time: "09:30", stop: "Kahvaltı (Ayvalık / Küçükköy civarı)", duration: "45-60 dk" },
-          { time: "10:30", stop: "Küçükköy (taş sokaklar, sanat atölyeleri)", duration: "45-60 dk" },
-          { time: "11:30", stop: "Şeytan Sofrası", duration: "30-40 dk" },
-          { time: "12:15", stop: "🏖️ Sarımsaklı Halk Plajı (ücretsiz giriş, kum plaj, denize girme)", duration: "1-1,5 saat" },
-          { time: "13:50", stop: "Airbnb'ye hareket", duration: "" },
-          { time: "14:00", stop: "Airbnb Check-in", duration: "30 dk" },
-          { time: "15:00", stop: "Rahmi M. Koç Müzesi", duration: "45 dk" },
-          { time: "15:50", stop: "Sevim ve Necdet Kent Kitaplığı", duration: "20 dk" },
-          { time: "16:20", stop: "Cunda taş sokakları + meşhur börekçi", duration: "1 saat" },
-          { time: "17:30", stop: "Cunda sahili ve marina yürüyüşü", duration: "30 dk" },
-          { time: "18:00", stop: "Aşıklar Tepesi (gün batımı)", duration: "45-60 dk" },
-          { time: "19:15", stop: "Tekne turu (varsa)", duration: "60 dk" },
-          { time: "20:30", stop: "Deniz kenarında akşam yemeği", duration: "" },
-          { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş", duration: "" }
+          { time: "05:00", stop: "İstanbul'dan çıkış" },
+          { time: "09:30", stop: "Kahvaltı (Ayvalık / Küçükköy civarı)" },
+          { time: "10:30", stop: "Küçükköy (taş sokaklar, sanat atölyeleri)" },
+          { time: "11:30", stop: "Şeytan Sofrası" },
+          { time: "12:15", stop: "🏖️ Sarımsaklı Halk Plajı (ücretsiz giriş, kum plaj, denize girme)" },
+          { time: "13:50", stop: "Airbnb'ye hareket" },
+          { time: "14:00", stop: "Airbnb Check-in" },
+          { time: "15:00", stop: "Rahmi M. Koç Müzesi" },
+          { time: "15:50", stop: "Sevim ve Necdet Kent Kitaplığı" },
+          { time: "16:20", stop: "Cunda taş sokakları + meşhur börekçi" },
+          { time: "17:30", stop: "Cunda sahili ve marina yürüyüşü" },
+          { time: "18:00", stop: "Aşıklar Tepesi (gün batımı)" },
+          { time: "19:15", stop: "Tekne turu (varsa)" },
+          { time: "20:30", stop: "Deniz kenarında akşam yemeği" },
+          { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş" }
         ]
       }
     ];
 
+    let days = JSON.parse(JSON.stringify(DEFAULT_DAYS));
     let state = loadState();
     let notesDebounce = null;
+    let titleDebounce = null;
+    let pickerTarget = null;
+    let editTaskTarget = null;
+    let eventsBound = false;
+
+    const HALF_HOUR_OPTIONS = (() => {
+      const opts = [];
+      for (let h = 0; h < 24; h++) {
+        opts.push(minutesToTime(h * 60));
+        opts.push(minutesToTime(h * 60 + 30));
+      }
+      return opts;
+    })();
+
+    function snapToHalfHour(time) {
+      if (!time) return "00:00";
+      const mins = timeToMinutes(time);
+      return minutesToTime(Math.round(mins / 30) * 30);
+    }
+
+    function snapMinutesToHalfHour(mins) {
+      return Math.round(mins / 30) * 30;
+    }
+
+    /** Saat string → dakika; gece yarısı geçişinde referans başlangıçtan sonraki güne taşır */
+    function clockToAbsoluteMinutes(clockTime, referenceStartMin) {
+      const m = timeToMinutes(snapToHalfHour(clockTime));
+      if (m < referenceStartMin && referenceStartMin - m > 720) {
+        return m + 1440;
+      }
+      return m;
+    }
 
     function timeToMinutes(time) {
       const [h, m] = time.split(":").map(Number);
@@ -482,43 +1237,43 @@
       return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
     }
 
-    function parseDuration(str) {
-      if (!str || !str.trim()) return 0;
-      const s = str.toLowerCase().trim().replace(",", ".");
-
-      const hourRange = s.match(/(\d+(?:\.\d+)?)\s*-\s*(\d+(?:\.\d+)?)\s*saat/);
-      if (hourRange) {
-        const avg = (parseFloat(hourRange[1]) + parseFloat(hourRange[2])) / 2;
-        return Math.round(avg * 60);
+    function formatDurationMinutes(mins) {
+      if (mins <= 0) return "—";
+      if (mins % 60 === 0) {
+        const h = mins / 60;
+        return h === 1 ? "1 saat" : `${h} saat`;
       }
-
-      const dkRange = s.match(/(\d+)\s*-\s*(\d+)\s*dk/);
-      if (dkRange) {
-        return Math.round((parseInt(dkRange[1], 10) + parseInt(dkRange[2], 10)) / 2);
+      if (mins % 60 === 30) {
+        const h = Math.floor(mins / 60);
+        return h ? `${h},5 saat` : "30 dk";
       }
-
-      const hour = s.match(/(\d+(?:\.\d+)?)\s*saat/);
-      if (hour) return Math.round(parseFloat(hour[1]) * 60);
-
-      const dk = s.match(/(\d+)\s*dk/);
-      if (dk) return parseInt(dk[1], 10);
-
-      return 0;
+      if (mins < 60) return `${mins} dk`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return `${h} saat ${m} dk`;
     }
 
     function formatDelta(mins) {
       if (mins === 0) return { text: "", type: "" };
       const abs = Math.abs(mins);
-      let text;
-      if (abs < 60) {
-        text = `${mins > 0 ? "+" : "-"}${abs} dk`;
-      } else {
-        const h = Math.floor(abs / 60);
-        const m = abs % 60;
-        const sign = mins > 0 ? "+" : "-";
-        text = m ? `${sign}${h}s ${m}dk` : `${sign}${h} saat`;
+      const sign = mins > 0 ? "+" : "-";
+
+      if (abs % 60 === 0) {
+        const h = abs / 60;
+        return { text: `${sign}${h} saat`, type: mins > 0 ? "late" : "early" };
       }
-      return { text, type: mins > 0 ? "late" : "early" };
+      if (abs % 30 === 0 && abs >= 30) {
+        const h = Math.floor(abs / 60);
+        const half = abs % 60 === 30;
+        const text = h && half ? `${sign}${h},5 saat` : half ? `${sign}30 dk` : `${sign}${h} saat`;
+        return { text, type: mins > 0 ? "late" : "early" };
+      }
+      if (abs < 60) {
+        return { text: `${sign}${abs} dk`, type: mins > 0 ? "late" : "early" };
+      }
+      const h = Math.floor(abs / 60);
+      const m = abs % 60;
+      return { text: m ? `${sign}${h}s ${m}dk` : `${sign}${h} saat`, type: mins > 0 ? "late" : "early" };
     }
 
     function formatDelaySummary(mins) {
@@ -530,6 +1285,7 @@
     function getDefaultDayState(day) {
       return {
         activeView: "program",
+        mode: "usage",
         notes: day.notes || "",
         items: {}
       };
@@ -545,8 +1301,16 @@
       });
 
       try {
-        const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) {
+          const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
+          if (v1) saved = { ...v1, daysData: null };
+        }
         if (!saved) return defaults;
+
+        if (saved.daysData && Array.isArray(saved.daysData)) {
+          days = saved.daysData;
+        }
 
         if (saved.activeDayId && days.some((d) => d.id === saved.activeDayId)) {
           defaults.activeDayId = saved.activeDayId;
@@ -557,9 +1321,13 @@
           if (!savedDay) return;
           defaults.days[day.id] = {
             activeView: savedDay.activeView === "notes" ? "notes" : "program",
+            mode: savedDay.mode === "edit" ? "edit" : "usage",
             notes: typeof savedDay.notes === "string" ? savedDay.notes : day.notes || "",
             items: savedDay.items && typeof savedDay.items === "object" ? savedDay.items : {}
           };
+          Object.values(defaults.days[day.id].items).forEach((item) => {
+            if (item?.actualEnd) item.actualEnd = snapToHalfHour(item.actualEnd);
+          });
         });
       } catch (_) {
         /* ignore corrupt storage */
@@ -569,7 +1337,7 @@
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, daysData: days }));
     }
 
     function ensureDayState(dayId) {
@@ -580,52 +1348,82 @@
       return state.days[dayId];
     }
 
-    function getPlannedSlotDuration(dayItems, index) {
-      const durationMin = parseDuration(dayItems[index].duration);
-      if (durationMin > 0) return durationMin;
-      if (index < dayItems.length - 1) {
-        return timeToMinutes(dayItems[index + 1].time) - timeToMinutes(dayItems[index].time);
+    function hasCompletedTasks(dayState) {
+      return Object.values(dayState.items).some((item) => item?.done && item?.actualEnd);
+    }
+
+    function buildPlannedChain(dayItems) {
+      const n = dayItems.length;
+      if (n === 0) return { starts: [], ends: [] };
+
+      const starts = [];
+      const ends = [];
+
+      starts[0] = snapToHalfHour(dayItems[0].time);
+      for (let i = 0; i < n - 1; i++) {
+        ends[i] = snapToHalfHour(dayItems[i + 1].time);
+        starts[i + 1] = ends[i];
       }
-      return 0;
+      ends[n - 1] = starts[n - 1];
+
+      return { starts, ends };
+    }
+
+    function buildPlannedSchedule(dayItems) {
+      const { starts, ends } = buildPlannedChain(dayItems);
+      return dayItems.map((item, i) => ({
+        index: i,
+        plannedStart: starts[i],
+        plannedEnd: ends[i],
+        adjustedStart: starts[i],
+        adjustedEnd: ends[i],
+        adjustedStartMin: timeToMinutes(starts[i]),
+        adjustedEndMin: timeToMinutes(ends[i]),
+        actualEnd: null,
+        slotDuration: timeToMinutes(ends[i]) - timeToMinutes(starts[i]),
+        isDone: false,
+        startDeltaMin: 0,
+        endDeltaMin: 0
+      }));
     }
 
     function computeSchedule(dayItems, dayState) {
-      const n = dayItems.length;
+      const planned = buildPlannedSchedule(dayItems);
+      if (!hasCompletedTasks(dayState)) return planned;
+
       const schedule = [];
 
-      for (let i = 0; i < n; i++) {
-        const item = dayItems[i];
-        const plannedStartMin = timeToMinutes(item.time);
-        const slotDuration = getPlannedSlotDuration(dayItems, i);
-        const plannedEndMin = plannedStartMin + slotDuration;
+      for (let i = 0; i < dayItems.length; i++) {
         const itemState = dayState.items[String(i)];
         const isDone = Boolean(itemState?.done && itemState?.actualEnd);
+        const plannedStartMin = timeToMinutes(planned[i].plannedStart);
+        const plannedEndMin = timeToMinutes(planned[i].plannedEnd);
+        const slotLen = plannedEndMin - plannedStartMin;
 
-        let adjustedStartMin;
-        if (i === 0) {
-          adjustedStartMin = plannedStartMin;
-        } else {
-          const prev = schedule[i - 1];
-          adjustedStartMin = prev.isDone
-            ? timeToMinutes(prev.actualEnd)
-            : timeToMinutes(prev.adjustedEnd);
-        }
+        const adjustedStartMin = i === 0
+          ? plannedStartMin
+          : schedule[i - 1].adjustedEndMin;
 
         let adjustedEndMin;
         if (isDone) {
-          adjustedEndMin = timeToMinutes(itemState.actualEnd);
+          adjustedEndMin = Math.max(
+            adjustedStartMin,
+            clockToAbsoluteMinutes(itemState.actualEnd, adjustedStartMin)
+          );
         } else {
-          adjustedEndMin = adjustedStartMin + slotDuration;
+          adjustedEndMin = snapMinutesToHalfHour(adjustedStartMin + slotLen);
         }
 
         schedule.push({
           index: i,
-          plannedStart: item.time,
-          plannedEnd: minutesToTime(plannedEndMin),
+          plannedStart: planned[i].plannedStart,
+          plannedEnd: planned[i].plannedEnd,
           adjustedStart: minutesToTime(adjustedStartMin),
           adjustedEnd: minutesToTime(adjustedEndMin),
-          actualEnd: isDone ? itemState.actualEnd : null,
-          slotDuration,
+          adjustedStartMin,
+          adjustedEndMin,
+          actualEnd: isDone ? minutesToTime(adjustedEndMin) : null,
+          slotDuration: slotLen,
           isDone,
           startDeltaMin: adjustedStartMin - plannedStartMin,
           endDeltaMin: adjustedEndMin - plannedEndMin
@@ -660,7 +1458,23 @@
 
     function nowTimeString() {
       const d = new Date();
-      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+      return snapToHalfHour(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+    }
+
+    function iconEdit() {
+      return `<svg class="btn-svg" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M11.5 1.5l3 3-9 9H2v-3.5l9-9z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/>
+        <path d="M10 3l3 3" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+      </svg>`;
+    }
+
+    function iconDelete() {
+      return `<svg class="btn-svg" viewBox="0 0 16 16" aria-hidden="true">
+        <path d="M3 4.5h10" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+        <path d="M6 4.5V3.75a.75.75 0 01.75-.75h2.5a.75.75 0 01.75.75V4.5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round"/>
+        <path d="M5.25 4.5l.55 7.65a.75.75 0 00.74.7h3.92a.75.75 0 00.74-.7L11.75 4.5" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round"/>
+        <path d="M6.75 7.25v3.5M9.25 7.25v3.5" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+      </svg>`;
     }
 
     function renderStop(item) {
@@ -674,71 +1488,143 @@
       return schedule[index].adjustedEnd;
     }
 
-    function renderTimeCell(planned, adjusted, deltaMin) {
-      const showPlanned = deltaMin !== 0;
-      const delta = formatDelta(deltaMin);
+    function formatClockLabel(absoluteMin) {
+      const clock = minutesToTime(absoluteMin);
+      if (absoluteMin >= 1440) {
+        return `${clock}<span class="next-day-tag" title="Ertesi gün">⁺¹</span>`;
+      }
+      return clock;
+    }
+
+    function renderCompactTime(planned, adjusted, deltaMin, absoluteMin) {
+      const display = formatClockLabel(absoluteMin ?? timeToMinutes(adjusted));
       const tone = deltaMin > 0 ? "late" : deltaMin < 0 ? "early" : "";
+      const delta = formatDelta(deltaMin);
+      if (deltaMin === 0) {
+        return `<span class="time-val">${display}</span>`;
+      }
       return `
-        <span class="time-planned${showPlanned ? "" : " hidden"}">${planned}</span>
-        <span class="time-adjusted${tone ? ` ${tone}` : ""}">${adjusted}</span>
-        ${delta.text ? `<span class="delta-badge ${delta.type}">${delta.text}</span>` : ""}
+        <span class="time-val${tone ? ` ${tone}` : ""}" title="Plan: ${planned}">${display}</span>
+        <span class="delta-inline ${delta.type}">${delta.text}</span>
       `;
     }
 
-    function renderTaskRow(day, dayState, schedule, index) {
+    function renderTableHead(mode) {
+      if (mode === "edit") {
+        return `
+          <tr>
+            <th class="col-start">Başlangıç</th>
+            <th class="col-end">Bitiş</th>
+            <th>Durak</th>
+            <th class="col-edit"></th>
+            <th class="col-duration">Süre</th>
+            <th class="col-sort"></th>
+          </tr>
+        `;
+      }
+      return `
+        <tr>
+          <th class="col-check"></th>
+          <th class="col-start">Başlangıç</th>
+          <th class="col-end">Bitiş</th>
+          <th>Durak</th>
+          <th class="col-duration">Süre</th>
+        </tr>
+      `;
+    }
+
+    function renderTaskRow(day, dayState, schedule, index, mode) {
       const item = day.items[index];
       const slot = schedule[index];
+      const itemCount = day.items.length;
+      const isLast = index === itemCount - 1;
+
+      if (mode === "edit") {
+        const startTime = slot.plannedStart;
+        const endTime = slot.plannedEnd;
+        const endCell = isLast
+          ? `<span class="time-val">${endTime}</span>`
+          : `<button type="button" class="time-chip" data-action="open-picker"
+              data-day-id="${day.id}" data-index="${index}" data-field="plannedEnd"
+              data-current="${endTime}">${endTime}</button>`;
+        return `
+          <tr class="task-row" data-index="${index}">
+            <td class="col-start" data-label="Başlangıç">
+              <div class="time-cell">
+                <button type="button" class="time-chip" data-action="open-picker"
+                  data-day-id="${day.id}" data-index="${index}" data-field="plannedStart"
+                  data-current="${startTime}">${startTime}</button>
+              </div>
+            </td>
+            <td class="col-end" data-label="Bitiş"><div class="time-cell">${endCell}</div></td>
+            <td class="col-stop" title="${escapeHtml(item.stop)}">${renderStop(item)}</td>
+            <td class="col-edit">
+              <div class="row-actions">
+                <button type="button" class="btn-icon btn-icon-edit" data-action="edit-task"
+                  data-day-id="${day.id}" data-index="${index}" aria-label="Düzenle">${iconEdit()}</button>
+                <button type="button" class="btn-icon btn-icon-delete" data-action="delete-task"
+                  data-day-id="${day.id}" data-index="${index}"
+                  ${itemCount <= 1 ? "disabled" : ""} aria-label="Sil">${iconDelete()}</button>
+              </div>
+            </td>
+            <td class="col-duration" data-label="Süre">${formatDurationMinutes(slot.slotDuration)}</td>
+            <td class="col-sort">
+              <div class="sort-btns">
+                <button type="button" class="btn-icon" data-action="move-up"
+                  data-day-id="${day.id}" data-index="${index}" ${index === 0 ? "disabled" : ""} aria-label="Yukarı">▲</button>
+                <button type="button" class="btn-icon" data-action="move-down"
+                  data-day-id="${day.id}" data-index="${index}" ${isLast ? "disabled" : ""} aria-label="Aşağı">▼</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+
       const itemState = dayState.items[String(index)] || {};
       const isDone = Boolean(itemState.done);
-      const isNext = getNextUpIndex(dayState, day.items.length) === index;
-      const displayEnd = isDone ? (itemState.actualEnd || slot.adjustedEnd) : slot.adjustedEnd;
+      const isNext = getNextUpIndex(dayState, itemCount) === index;
+      const displayEnd = isDone
+        ? snapToHalfHour(itemState.actualEnd || slot.adjustedEnd)
+        : slot.adjustedEnd;
+      const endDelta = slot.endDeltaMin;
+
+      const endCell = isDone
+        ? `<div class="time-cell">
+            <button type="button" class="time-chip" aria-label="Bitiş saati seç"
+              data-action="open-picker" data-day-id="${day.id}" data-index="${index}"
+              data-field="actualEnd" data-current="${displayEnd}">${formatClockLabel(slot.adjustedEndMin)}</button>
+            <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}">Şimdi</button>
+            ${endDelta !== 0 ? `<span class="delta-inline ${endDelta > 0 ? "late" : "early"}">${formatDelta(endDelta).text}</span>` : ""}
+          </div>`
+        : `<div class="time-cell">${renderCompactTime(slot.plannedEnd, displayEnd, endDelta, slot.adjustedEndMin)}</div>`;
 
       return `
-        <div class="task-row${isDone ? " done" : ""}${isNext ? " next-up" : ""}" data-index="${index}">
-          <input
-            type="checkbox"
-            class="task-check"
-            aria-label="${item.stop} tamamlandı"
-            ${isDone ? "checked" : ""}
-            data-action="toggle"
-            data-day-id="${day.id}"
-            data-index="${index}"
-          />
-          <div class="time-col col-start">
-            ${renderTimeCell(slot.plannedStart, slot.adjustedStart, slot.startDeltaMin)}
-          </div>
-          <div class="time-col col-end">
-            ${isDone
-              ? renderTimeCell(slot.plannedEnd, displayEnd, slot.endDeltaMin)
-              : `<span class="time-planned${slot.endDeltaMin !== 0 ? "" : " hidden"}">${slot.plannedEnd}</span>
-                 <span class="time-adjusted${slot.endDeltaMin > 0 ? " late" : slot.endDeltaMin < 0 ? " early" : ""}">${displayEnd}</span>`}
-            <div class="task-controls${isDone ? "" : " hidden"}">
-              <input
-                type="time"
-                class="time-input"
-                value="${itemState.actualEnd || slot.adjustedEnd}"
-                aria-label="Bitiş saati"
-                data-action="set-end"
-                data-day-id="${day.id}"
-                data-index="${index}"
-              />
-              <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}">Şimdi</button>
-            </div>
-          </div>
-          <div class="col-stop">${renderStop(item)}</div>
-          <div class="col-duration">${item.duration || ""}</div>
-        </div>
+        <tr class="task-row${isDone ? " done" : ""}${isNext ? " next-up" : ""}" data-index="${index}">
+          <td class="col-check">
+            <input type="checkbox" class="task-check" aria-label="${item.stop} tamamlandı"
+              ${isDone ? "checked" : ""} data-action="toggle"
+              data-day-id="${day.id}" data-index="${index}" />
+          </td>
+          <td class="col-start" data-label="Başlangıç">
+            <div class="time-cell">${renderCompactTime(slot.plannedStart, slot.adjustedStart, slot.startDeltaMin, slot.adjustedStartMin)}</div>
+          </td>
+          <td class="col-end" data-label="Bitiş">${endCell}</td>
+          <td class="col-stop" title="${escapeHtml(item.stop)}">${renderStop(item)}</td>
+          <td class="col-duration" data-label="Süre">${formatDurationMinutes(slot.slotDuration)}</td>
+        </tr>
       `;
     }
 
     function renderDayPanel(day) {
       const dayState = ensureDayState(day.id);
+      const mode = dayState.mode || "usage";
       const schedule = computeSchedule(day.items, dayState);
       const progress = getDayProgress(day, dayState);
       const delayMin = getDayDelay(schedule);
       const delayLabel = formatDelaySummary(delayMin);
       const delayClass = delayMin > 0 ? "" : delayMin < 0 ? " ahead" : " on-time";
       const isActive = state.activeDayId === day.id;
+      const isEdit = mode === "edit";
 
       return `
         <section
@@ -751,60 +1637,66 @@
           <div class="day-card">
             <div class="day-header">
               <div class="day-title-row">
-                <h2 class="day-title">📅 ${day.title}</h2>
-                <span class="delay-summary${delayClass}">${delayLabel}</span>
+                ${isEdit
+                  ? `<label class="day-title-edit">
+                      <span class="day-title-icon" aria-hidden="true">📅</span>
+                      <input type="text" class="day-title-input" value="${escapeAttr(day.title)}"
+                        placeholder="Gün başlığı" data-action="day-title" data-day-id="${day.id}"
+                        aria-label="Gün başlığı" />
+                    </label>`
+                  : `<h2 class="day-title">📅 ${day.title}</h2>`}
+                ${isEdit ? "" : `<span class="delay-summary${delayClass}">${delayLabel}</span>`}
               </div>
+              ${isEdit ? "" : `
               <div class="progress-wrap">
                 <div class="progress-label">${progress.done} / ${progress.total} tamamlandı</div>
                 <div class="progress-bar" role="progressbar" aria-valuenow="${progress.pct}" aria-valuemin="0" aria-valuemax="100">
                   <div class="progress-fill" style="width:${progress.pct}%"></div>
                 </div>
-              </div>
+              </div>`}
             </div>
 
             <div class="sub-bar-wrap">
               <div class="sub-bar" role="tablist" aria-label="${day.tabLabel} görünümü">
-                <button
-                  type="button"
-                  class="sub-tab${dayState.activeView === "program" ? " active" : ""}"
-                  role="tab"
-                  aria-selected="${dayState.activeView === "program"}"
-                  data-action="view"
-                  data-day-id="${day.id}"
-                  data-view="program"
-                >Program</button>
-                <button
-                  type="button"
-                  class="sub-tab${dayState.activeView === "notes" ? " active" : ""}"
-                  role="tab"
-                  aria-selected="${dayState.activeView === "notes"}"
-                  data-action="view"
-                  data-day-id="${day.id}"
-                  data-view="notes"
-                >Notlar</button>
+                <button type="button" class="sub-tab${dayState.activeView === "program" ? " active" : ""}"
+                  role="tab" aria-selected="${dayState.activeView === "program"}"
+                  data-action="view" data-day-id="${day.id}" data-view="program">Program</button>
+                <button type="button" class="sub-tab${dayState.activeView === "notes" ? " active" : ""}"
+                  role="tab" aria-selected="${dayState.activeView === "notes"}"
+                  data-action="view" data-day-id="${day.id}" data-view="notes">Notlar</button>
               </div>
             </div>
 
             <div class="day-body">
               <div class="view-panel${dayState.activeView === "program" ? " active" : ""}" data-view-panel="program">
                 <div class="day-actions">
-                  <button type="button" class="btn-reset" data-action="reset" data-day-id="${day.id}">Günü sıfırla</button>
+                  <div class="mode-toggle">
+                    <button type="button" class="mode-btn${!isEdit ? " active" : ""}"
+                      data-action="set-mode" data-day-id="${day.id}" data-mode="usage">Kullanım</button>
+                    <button type="button" class="mode-btn${isEdit ? " active edit-active" : ""}"
+                      data-action="set-mode" data-day-id="${day.id}" data-mode="edit">Düzenleme</button>
+                  </div>
+                  <div class="day-actions-right">
+                    ${isEdit
+                      ? `<button type="button" class="btn-add" data-action="add-task" data-day-id="${day.id}">+ Yeni durak</button>
+                         <button type="button" class="btn-delete-day" data-action="delete-day" data-day-id="${day.id}"
+                           ${days.length <= 1 ? "disabled" : ""}>Günü sil</button>`
+                      : `<button type="button" class="btn-reset" data-action="reset" data-day-id="${day.id}">Günü sıfırla</button>`}
+                  </div>
                 </div>
-                <div class="itinerary-header">
-                  <span></span>
-                  <span>Başlangıç</span>
-                  <span>Bitiş</span>
-                  <span>Durak</span>
-                  <span>Süre</span>
+                <div class="itinerary-wrap">
+                  <table class="itinerary-table mode-${mode}">
+                    <thead>${renderTableHead(mode)}</thead>
+                    <tbody>
+                      ${day.items.map((_, i) => renderTaskRow(day, dayState, schedule, i, mode)).join("")}
+                    </tbody>
+                  </table>
                 </div>
-                ${day.items.map((_, i) => renderTaskRow(day, dayState, schedule, i)).join("")}
               </div>
               <div class="view-panel${dayState.activeView === "notes" ? " active" : ""}" data-view-panel="notes">
-                <textarea
-                  class="notes-area"
+                <textarea class="notes-area"
                   placeholder="Bu gün için notlar, adresler, rezervasyon bilgileri..."
-                  data-action="notes"
-                  data-day-id="${day.id}"
+                  data-action="notes" data-day-id="${day.id}"
                 >${escapeHtml(dayState.notes)}</textarea>
               </div>
             </div>
@@ -818,6 +1710,10 @@
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
+    }
+
+    function escapeAttr(str) {
+      return escapeHtml(str).replace(/"/g, "&quot;");
     }
 
     function renderTab(day, index) {
@@ -842,39 +1738,291 @@
       bindEvents();
     }
 
+    function initTimePicker() {
+      const grid = document.getElementById("time-picker-grid");
+      if (grid.childElementCount > 0) return;
+      grid.innerHTML = HALF_HOUR_OPTIONS.map((time) => `
+        <button type="button" class="time-option" data-action="pick-time" data-time="${time}">${time}</button>
+      `).join("");
+
+      document.getElementById("time-picker").addEventListener("click", (e) => {
+        const el = e.target.closest("[data-action]");
+        if (!el) return;
+        if (el.dataset.action === "close-picker") closeTimePicker();
+        if (el.dataset.action === "pick-time" && pickerTarget) {
+          applyPickedTime(pickerTarget.dayId, pickerTarget.index, pickerTarget.field, el.dataset.time);
+          closeTimePicker();
+        }
+      });
+
+      document.getElementById("edit-task-sheet").addEventListener("click", (e) => {
+        const el = e.target.closest("[data-action]");
+        if (!el) return;
+        if (el.dataset.action === "close-edit") closeEditTask();
+      });
+
+      document.getElementById("edit-task-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        saveEditTask();
+      });
+    }
+
+    const PICKER_TITLES = {
+      actualEnd: "Bitiş saati seç",
+      plannedStart: "Başlangıç saati seç",
+      plannedEnd: "Bitiş saati seç"
+    };
+
+    function openTimePicker(dayId, index, currentValue, field) {
+      pickerTarget = { dayId, index, field: field || "actualEnd" };
+      document.getElementById("time-picker-title").textContent =
+        PICKER_TITLES[pickerTarget.field] || "Saat seç";
+      const overlay = document.getElementById("time-picker");
+      const snapped = snapToHalfHour(currentValue);
+      overlay.querySelectorAll(".time-option").forEach((btn) => {
+        btn.classList.toggle("selected", btn.dataset.time === snapped);
+      });
+      const selected = overlay.querySelector(".time-option.selected");
+      if (selected) {
+        setTimeout(() => selected.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+      }
+      overlay.classList.remove("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeTimePicker() {
+      pickerTarget = null;
+      const overlay = document.getElementById("time-picker");
+      overlay.classList.add("hidden");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+
+    function applyPickedTime(dayId, index, field, time) {
+      if (!time) return;
+      const t = snapToHalfHour(time);
+      if (field === "plannedStart") {
+        const day = days.find((d) => d.id === dayId);
+        day.items[index].time = t;
+        saveState();
+        renderApp();
+      } else if (field === "plannedEnd") {
+        const day = days.find((d) => d.id === dayId);
+        if (index < day.items.length - 1) {
+          day.items[index + 1].time = t;
+          saveState();
+          renderApp();
+        }
+      } else {
+        setActualEnd(dayId, index, t);
+      }
+    }
+
+    function openEditTask(dayId, index) {
+      const day = days.find((d) => d.id === dayId);
+      const item = day.items[index];
+      editTaskTarget = { dayId, index };
+      document.getElementById("edit-stop").value = item.stop;
+      const sheet = document.getElementById("edit-task-sheet");
+      sheet.classList.remove("hidden");
+      sheet.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+
+    function closeEditTask() {
+      editTaskTarget = null;
+      const sheet = document.getElementById("edit-task-sheet");
+      sheet.classList.add("hidden");
+      sheet.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+    }
+
+    function saveEditTask() {
+      if (!editTaskTarget) return;
+      const { dayId, index } = editTaskTarget;
+      const day = days.find((d) => d.id === dayId);
+      day.items[index].stop = document.getElementById("edit-stop").value.trim();
+      closeEditTask();
+      saveState();
+      renderApp();
+    }
+
+    function reindexCompletionAfterDelete(dayState, deletedIndex) {
+      const newItems = {};
+      Object.keys(dayState.items).forEach((key) => {
+        const oldIdx = Number(key);
+        if (oldIdx === deletedIndex) return;
+        const newIdx = oldIdx > deletedIndex ? oldIdx - 1 : oldIdx;
+        newItems[String(newIdx)] = dayState.items[key];
+      });
+      dayState.items = newItems;
+    }
+
+    function deleteTask(dayId, index) {
+      const day = days.find((d) => d.id === dayId);
+      if (!day || day.items.length <= 1) return;
+      const dayState = ensureDayState(dayId);
+      day.items.splice(index, 1);
+      reindexCompletionAfterDelete(dayState, index);
+      if (editTaskTarget?.dayId === dayId) {
+        if (editTaskTarget.index === index) closeEditTask();
+        else if (editTaskTarget.index > index) editTaskTarget.index--;
+      }
+      saveState();
+      renderApp();
+    }
+
+    function reindexCompletion(dayState, fromIndex, toIndex) {
+      const oldItems = dayState.items;
+      const newItems = {};
+      Object.keys(oldItems).forEach((key) => {
+        let oldIdx = Number(key);
+        let newIdx = oldIdx;
+        if (oldIdx === fromIndex) newIdx = toIndex;
+        else if (oldIdx === toIndex) newIdx = fromIndex;
+        newItems[String(newIdx)] = oldItems[key];
+      });
+      dayState.items = newItems;
+    }
+
+    function moveTask(dayId, index, direction) {
+      const day = days.find((d) => d.id === dayId);
+      const newIdx = index + direction;
+      if (newIdx < 0 || newIdx >= day.items.length) return;
+      const dayState = ensureDayState(dayId);
+      [day.items[index], day.items[newIdx]] = [day.items[newIdx], day.items[index]];
+      reindexCompletion(dayState, index, newIdx);
+      saveState();
+      renderApp();
+    }
+
+    function addTask(dayId) {
+      const day = days.find((d) => d.id === dayId);
+      const chain = buildPlannedChain(day.items);
+      const lastEnd = chain.ends[chain.ends.length - 1] || "12:00";
+      const newTime = snapToHalfHour(minutesToTime(timeToMinutes(lastEnd) + 30));
+      day.items.push({ time: newTime, stop: "Yeni durak" });
+      saveState();
+      renderApp();
+    }
+
+    function setMode(dayId, mode) {
+      ensureDayState(dayId).mode = mode;
+      saveState();
+      renderApp();
+    }
+
+    function generateDayId() {
+      let n = 1;
+      while (days.some((d) => d.id === `day${n}`)) n++;
+      return `day${n}`;
+    }
+
+    function renumberDayTabLabels() {
+      days.forEach((day, i) => {
+        day.tabLabel = `${i + 1}. Gün`;
+      });
+    }
+
+    function addDay() {
+      const num = days.length + 1;
+      const id = generateDayId();
+      const newDay = {
+        id,
+        tabLabel: `${num}. Gün`,
+        title: `${num}. Gün`,
+        notes: "",
+        items: [{ time: "09:00", stop: "Yeni durak" }]
+      };
+      days.push(newDay);
+      state.days[id] = { ...getDefaultDayState(newDay), mode: "edit" };
+      state.activeDayId = id;
+      saveState();
+      renderApp();
+    }
+
+    function deleteDay(dayId) {
+      if (days.length <= 1) return;
+      const idx = days.findIndex((d) => d.id === dayId);
+      if (idx === -1) return;
+
+      days.splice(idx, 1);
+      delete state.days[dayId];
+
+      if (editTaskTarget?.dayId === dayId) closeEditTask();
+      if (pickerTarget?.dayId === dayId) closeTimePicker();
+
+      if (state.activeDayId === dayId) {
+        const nextIdx = Math.min(idx, days.length - 1);
+        state.activeDayId = days[nextIdx].id;
+      }
+
+      renumberDayTabLabels();
+      saveState();
+      renderApp();
+    }
+
     function bindEvents() {
-      document.getElementById("tabs").querySelectorAll(".day-tab").forEach((tab) => {
-        tab.addEventListener("click", () => selectDay(tab.dataset.dayId));
+      if (eventsBound) return;
+      eventsBound = true;
+
+      document.getElementById("tabs-bar").addEventListener("click", (e) => {
+        if (e.target.closest("[data-action=add-day]")) {
+          addDay();
+          return;
+        }
+        const tab = e.target.closest(".day-tab");
+        if (tab) selectDay(tab.dataset.dayId);
       });
 
       document.getElementById("day-panels").addEventListener("click", (e) => {
         const el = e.target.closest("[data-action]");
         if (!el) return;
 
-        const { action, dayId, index, view } = el.dataset;
+        const { action, dayId, index, view, mode, field } = el.dataset;
 
-        if (action === "toggle") toggleItem(dayId, Number(index), el.checked);
         if (action === "now") setActualEnd(dayId, Number(index), nowTimeString());
         if (action === "view") setView(dayId, view);
         if (action === "reset") resetDay(dayId);
+        if (action === "set-mode") setMode(dayId, mode);
+        if (action === "open-picker") openTimePicker(dayId, Number(index), el.dataset.current, field || "actualEnd");
+        if (action === "edit-task") openEditTask(dayId, Number(index));
+        if (action === "move-up") moveTask(dayId, Number(index), -1);
+        if (action === "move-down") moveTask(dayId, Number(index), 1);
+        if (action === "delete-task") deleteTask(dayId, Number(index));
+        if (action === "add-task") addTask(dayId);
+        if (action === "delete-day") deleteDay(dayId);
       });
 
       document.getElementById("day-panels").addEventListener("change", (e) => {
-        const el = e.target.closest("[data-action]");
+        const el = e.target.closest("[data-action=toggle]");
         if (!el) return;
-        if (el.dataset.action === "set-end") {
-          setActualEnd(el.dataset.dayId, Number(el.dataset.index), el.value);
-        }
+        toggleItem(el.dataset.dayId, Number(el.dataset.index), el.checked);
       });
 
       document.getElementById("day-panels").addEventListener("input", (e) => {
-        const el = e.target.closest("[data-action=notes]");
-        if (!el) return;
-        clearTimeout(notesDebounce);
-        notesDebounce = setTimeout(() => {
-          ensureDayState(el.dataset.dayId).notes = el.value;
-          saveState();
-        }, 300);
+        const notesEl = e.target.closest("[data-action=notes]");
+        if (notesEl) {
+          clearTimeout(notesDebounce);
+          notesDebounce = setTimeout(() => {
+            ensureDayState(notesEl.dataset.dayId).notes = notesEl.value;
+            saveState();
+          }, 300);
+          return;
+        }
+
+        const titleEl = e.target.closest("[data-action=day-title]");
+        if (titleEl) {
+          clearTimeout(titleDebounce);
+          titleDebounce = setTimeout(() => {
+            const day = days.find((d) => d.id === titleEl.dataset.dayId);
+            if (day) {
+              day.title = titleEl.value.trim() || day.tabLabel;
+              saveState();
+            }
+          }, 300);
+        }
       });
     }
 
@@ -899,7 +2047,7 @@
       if (checked) {
         dayState.items[key] = {
           done: true,
-          actualEnd: dayState.items[key]?.actualEnd || defaultActualEnd(day, index, schedule)
+          actualEnd: snapToHalfHour(dayState.items[key]?.actualEnd || defaultActualEnd(day, index, schedule))
         };
       } else {
         delete dayState.items[key];
@@ -917,19 +2065,19 @@
       if (!time) return;
       const dayState = ensureDayState(dayId);
       const key = String(index);
-      dayState.items[key] = { done: true, actualEnd: time };
+      dayState.items[key] = { done: true, actualEnd: snapToHalfHour(time) };
       saveState();
       renderApp();
     }
 
     function resetDay(dayId) {
-      if (!confirm("Bu günün tüm ilerlemesi silinsin mi?")) return;
       const day = days.find((d) => d.id === dayId);
       state.days[dayId] = getDefaultDayState(day);
       saveState();
       renderApp();
     }
 
+    initTimePicker();
     renderApp();
   </script>
 </body>

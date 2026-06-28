@@ -521,6 +521,7 @@
     }
 
     .time-chip,
+    .duration-chip,
     .btn-now,
     .btn-icon,
     .mode-btn,
@@ -590,6 +591,34 @@
     }
 
     .time-chip:hover { background: var(--accent-2-soft-md); }
+
+    .duration-chip {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: 6px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 700;
+      line-height: 1;
+      padding: 0.2rem 0.45rem;
+    }
+
+    .duration-chip:hover { background: var(--accent-soft-md); }
+
+    .time-chip-linked {
+      background: rgba(31, 138, 112, 0.06);
+      border-color: var(--border);
+      color: var(--text-muted);
+      cursor: default;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+      padding: 0.2rem 0.35rem;
+    }
+
+    .time-chip-linked:hover { background: rgba(31, 138, 112, 0.06); }
 
     .btn-now {
       background: var(--accent-2);
@@ -1331,6 +1360,17 @@
     </div>
   </div>
 
+  <div id="duration-picker" class="time-picker-overlay hidden" aria-hidden="true" role="dialog" aria-label="Süre seç">
+    <div class="time-picker-backdrop" data-action="close-duration-picker"></div>
+    <div class="time-picker-sheet">
+      <div class="time-picker-header">
+        <span id="duration-picker-title">Süre seç</span>
+        <button type="button" class="time-picker-close" data-action="close-duration-picker" aria-label="Kapat">✕</button>
+      </div>
+      <div class="time-picker-grid" id="duration-picker-grid"></div>
+    </div>
+  </div>
+
   <div id="edit-task-sheet" class="time-picker-overlay hidden" aria-hidden="true" role="dialog" aria-label="Durak düzenle">
     <div class="time-picker-backdrop" data-action="close-edit"></div>
     <div class="time-picker-sheet">
@@ -1380,7 +1420,7 @@
           { time: "18:00", stop: "Aşıklar Tepesi (gün batımı)" },
           { time: "19:15", stop: "Tekne turu (varsa)" },
           { time: "20:30", stop: "Deniz kenarında akşam yemeği" },
-          { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş" }
+          { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş", endTime: "22:30" }
         ]
       }
     ];
@@ -1390,6 +1430,7 @@
     let notesDebounce = null;
     let titleDebounce = null;
     let pickerTarget = null;
+    let durationTarget = null;
     let editTaskTarget = null;
     let eventsBound = false;
     let lastFocusEl = null;
@@ -1403,6 +1444,8 @@
       }
       return opts;
     })();
+
+    const DURATION_OPTIONS = [15, 30, 45, 60, 90, 120, 150, 180, 240, 300, 360];
 
     function snapToHalfHour(time) {
       if (!time) return "00:00";
@@ -1495,6 +1538,87 @@
       return timeToMinutes(endTime) >= timeToMinutes(startTime);
     }
 
+    function shiftPlannedTimesFrom(dayItems, fromIndex, deltaMin) {
+      for (let j = fromIndex; j < dayItems.length; j++) {
+        const m = timeToMinutes(dayItems[j].time) + deltaMin;
+        dayItems[j].time = snapToHalfHour(minutesToTime(m));
+      }
+    }
+
+    /** items[boundaryIndex].time = row boundary; altındaki tüm saatler delta kadar kayar */
+    function applyBoundaryTime(dayItems, boundaryIndex, newTime) {
+      const t = snapToHalfHour(newTime);
+      const delta = timeToMinutes(t) - timeToMinutes(dayItems[boundaryIndex].time);
+      if (delta === 0) return true;
+
+      if (boundaryIndex > 0 && timeToMinutes(t) < timeToMinutes(dayItems[boundaryIndex - 1].time)) {
+        showToast("Saat, bir önceki durağın başlangıcından önce olamaz");
+        return false;
+      }
+      if (boundaryIndex < dayItems.length - 1) {
+        const newNextMin = timeToMinutes(dayItems[boundaryIndex + 1].time) + delta;
+        if (timeToMinutes(t) > newNextMin) {
+          showToast("Saat, bir sonraki sınırdan sonra olamaz");
+          return false;
+        }
+      }
+
+      shiftPlannedTimesFrom(dayItems, boundaryIndex, delta);
+      return true;
+    }
+
+    /** Seçilen süre → satır bitişi; alt satırlar kendi süreleriyle zincirleme kayar */
+    function applyRowDuration(dayItems, index, durationMin) {
+      if (durationMin <= 0) {
+        showToast("Geçersiz süre");
+        return false;
+      }
+      if (index < 0 || index >= dayItems.length) return false;
+
+      const { starts, ends } = buildPlannedChain(dayItems);
+      const durations = starts.map((s, i) => timeToMinutes(ends[i]) - timeToMinutes(s));
+      durations[index] = durationMin;
+
+      let startMin = timeToMinutes(dayItems[index].time);
+
+      for (let j = index; j < dayItems.length; j++) {
+        const endMin = snapMinutesToHalfHour(startMin + durations[j]);
+        if (endMin < startMin) {
+          showToast("Bitiş, başlangıç saatinden önce olamaz");
+          return false;
+        }
+
+        if (j === dayItems.length - 1) {
+          dayItems[j].endTime = minutesToTime(endMin);
+        } else {
+          dayItems[j + 1].time = minutesToTime(endMin);
+          startMin = endMin;
+        }
+      }
+      return true;
+    }
+
+    /** Son durak bitişi — yalnızca o durağın süresini değiştirir */
+    function applyLastStopEnd(dayItems, newTime) {
+      const last = dayItems.length - 1;
+      if (last < 0) return false;
+      const t = snapToHalfHour(newTime);
+      if (!validateSlotTimes(dayItems[last].time, t)) {
+        showToast("Bitiş, başlangıç saatinden önce olamaz");
+        return false;
+      }
+      dayItems[last].endTime = t;
+      return true;
+    }
+
+    function getPlannedEnd(dayItems, index) {
+      if (index < dayItems.length - 1) {
+        return dayItems[index + 1].time;
+      }
+      const item = dayItems[index];
+      return item.endTime || item.time;
+    }
+
     function getDefaultDayState(day) {
       return {
         activeView: "program",
@@ -1583,7 +1707,10 @@
         ends[i] = snapToHalfHour(dayItems[i + 1].time);
         starts[i + 1] = ends[i];
       }
-      ends[n - 1] = starts[n - 1];
+      if (n > 0) {
+        starts[n - 1] = snapToHalfHour(dayItems[n - 1].time);
+        ends[n - 1] = snapToHalfHour(getPlannedEnd(dayItems, n - 1));
+      }
 
       return { starts, ends };
     }
@@ -1781,19 +1908,18 @@
       if (mode === "edit") {
         const startTime = slot.plannedStart;
         const endTime = slot.plannedEnd;
-        const endCell = isLast
-          ? `<span class="time-val">${endTime}</span>`
-          : `<button type="button" class="time-chip" data-action="open-picker"
-              data-day-id="${day.id}" data-index="${index}" data-field="plannedEnd"
-              data-current="${endTime}">${endTime}</button>`;
+        const startCell = index === 0
+          ? `<button type="button" class="time-chip" data-action="open-picker"
+              data-day-id="${day.id}" data-index="${index}" data-field="plannedStart"
+              data-current="${startTime}">${startTime}</button>`
+          : `<span class="time-chip-linked" title="Önceki durağın bitiş saati">${startTime}</span>`;
+        const endCell = `<button type="button" class="time-chip" data-action="open-picker"
+            data-day-id="${day.id}" data-index="${index}" data-field="plannedEnd"
+            data-current="${endTime}">${endTime}</button>`;
         return `
           <tr class="task-row" data-index="${index}">
             <td class="col-start" data-label="Başlangıç">
-              <div class="time-cell">
-                <button type="button" class="time-chip" data-action="open-picker"
-                  data-day-id="${day.id}" data-index="${index}" data-field="plannedStart"
-                  data-current="${startTime}">${startTime}</button>
-              </div>
+              <div class="time-cell">${startCell}</div>
             </td>
             <td class="col-end" data-label="Bitiş"><div class="time-cell">${endCell}</div></td>
             <td class="col-stop" title="${escapeHtml(item.stop)}">${renderStop(item)}</td>
@@ -1806,7 +1932,11 @@
                   ${itemCount <= 1 ? "disabled" : ""} aria-label="Sil">${iconDelete()}</button>
               </div>
             </td>
-            <td class="col-duration" data-label="Süre">${formatDurationMinutes(slot.slotDuration)}</td>
+            <td class="col-duration" data-label="Süre">
+              <button type="button" class="duration-chip" data-action="open-duration-picker"
+                data-day-id="${day.id}" data-index="${index}" data-current="${slot.slotDuration}"
+                aria-label="Süre seç">${formatDurationMinutes(slot.slotDuration)}</button>
+            </td>
             <td class="col-sort">
               <div class="sort-btns">
                 <button type="button" class="btn-icon" data-action="move-up"
@@ -2003,6 +2133,21 @@
         }
       });
 
+      const durationGrid = document.getElementById("duration-picker-grid");
+      durationGrid.innerHTML = DURATION_OPTIONS.map((mins) => `
+        <button type="button" class="time-option" data-action="pick-duration" data-mins="${mins}">${formatDurationMinutes(mins)}</button>
+      `).join("");
+
+      document.getElementById("duration-picker").addEventListener("click", (e) => {
+        const el = e.target.closest("[data-action]");
+        if (!el) return;
+        if (el.dataset.action === "close-duration-picker") closeDurationPicker();
+        if (el.dataset.action === "pick-duration" && durationTarget) {
+          applyPickedDuration(durationTarget.dayId, durationTarget.index, Number(el.dataset.mins));
+          closeDurationPicker();
+        }
+      });
+
       document.getElementById("edit-task-sheet").addEventListener("click", (e) => {
         const el = e.target.closest("[data-action]");
         if (!el) return;
@@ -2050,6 +2195,42 @@
       restoreFocus();
     }
 
+    function openDurationPicker(dayId, index, currentMins) {
+      durationTarget = { dayId, index };
+      const overlay = document.getElementById("duration-picker");
+      const current = Number(currentMins) || 0;
+      overlay.querySelectorAll(".time-option").forEach((btn) => {
+        btn.classList.toggle("selected", Number(btn.dataset.mins) === current);
+      });
+      const selected = overlay.querySelector(".time-option.selected");
+      if (selected) {
+        setTimeout(() => selected.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
+      }
+      lastFocusEl = document.activeElement;
+      overlay.classList.remove("hidden");
+      overlay.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+      setTimeout(() => overlay.querySelector(".time-picker-close")?.focus(), 0);
+    }
+
+    function closeDurationPicker() {
+      durationTarget = null;
+      const overlay = document.getElementById("duration-picker");
+      overlay.classList.add("hidden");
+      overlay.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      restoreFocus();
+    }
+
+    function applyPickedDuration(dayId, index, durationMin) {
+      if (!durationMin || durationMin <= 0) return;
+      const day = days.find((d) => d.id === dayId);
+      if (!day) return;
+      if (!applyRowDuration(day.items, index, durationMin)) return;
+      saveState();
+      renderApp();
+    }
+
     function restoreFocus() {
       if (lastFocusEl?.focus) {
         lastFocusEl.focus();
@@ -2064,20 +2245,16 @@
       if (!day) return;
 
       if (field === "plannedStart") {
-        if (index < day.items.length - 1 && !validateSlotTimes(t, day.items[index + 1].time)) {
-          showToast("Başlangıç, bitiş saatinden önce olmalı");
-          return;
-        }
-        day.items[index].time = t;
+        if (index !== 0) return;
+        if (!applyBoundaryTime(day.items, 0, t)) return;
         saveState();
         renderApp();
       } else if (field === "plannedEnd") {
-        if (index >= day.items.length - 1) return;
-        if (!validateSlotTimes(day.items[index].time, t)) {
-          showToast("Bitiş, başlangıç saatinden sonra olmalı");
-          return;
-        }
-        day.items[index + 1].time = t;
+        const isLast = index >= day.items.length - 1;
+        const ok = isLast
+          ? applyLastStopEnd(day.items, t)
+          : applyBoundaryTime(day.items, index + 1, t);
+        if (!ok) return;
         saveState();
         renderApp();
       } else {
@@ -2172,10 +2349,11 @@
 
     function addTask(dayId) {
       const day = days.find((d) => d.id === dayId);
-      const chain = buildPlannedChain(day.items);
-      const lastEnd = chain.ends[chain.ends.length - 1] || "12:00";
+      if (day.items.length > 0) delete day.items[day.items.length - 1].endTime;
+      const lastEnd = getPlannedEnd(day.items, day.items.length - 1);
       const newTime = snapToHalfHour(minutesToTime(timeToMinutes(lastEnd) + 30));
-      day.items.push({ time: newTime, stop: "Yeni durak" });
+      const newEnd = snapToHalfHour(minutesToTime(timeToMinutes(newTime) + 30));
+      day.items.push({ time: newTime, stop: "Yeni durak", endTime: newEnd });
       saveState();
       renderApp();
     }
@@ -2225,6 +2403,7 @@
 
       if (editTaskTarget?.dayId === dayId) closeEditTask();
       if (pickerTarget?.dayId === dayId) closeTimePicker();
+      if (durationTarget?.dayId === dayId) closeDurationPicker();
 
       if (state.activeDayId === dayId) {
         const nextIdx = Math.min(idx, days.length - 1);
@@ -2280,6 +2459,7 @@
           });
           closeEditTask();
           closeTimePicker();
+          closeDurationPicker();
           saveState();
           renderApp();
           showToast("Yedek geri yüklendi");
@@ -2320,8 +2500,10 @@
       document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         const picker = document.getElementById("time-picker");
+        const durationPicker = document.getElementById("duration-picker");
         const editSheet = document.getElementById("edit-task-sheet");
         if (!picker.classList.contains("hidden")) closeTimePicker();
+        else if (!durationPicker.classList.contains("hidden")) closeDurationPicker();
         else if (!editSheet.classList.contains("hidden")) closeEditTask();
       });
 
@@ -2336,6 +2518,7 @@
         if (action === "reset") resetDay(dayId);
         if (action === "set-mode") setMode(dayId, mode);
         if (action === "open-picker") openTimePicker(dayId, Number(index), el.dataset.current, field || "actualEnd");
+        if (action === "open-duration-picker") openDurationPicker(dayId, Number(index), el.dataset.current);
         if (action === "edit-task") openEditTask(dayId, Number(index));
         if (action === "move-up") moveTask(dayId, Number(index), -1);
         if (action === "move-down") moveTask(dayId, Number(index), 1);

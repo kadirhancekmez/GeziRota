@@ -708,7 +708,10 @@
             ${renderTimeCell(slot.plannedStart, slot.adjustedStart, slot.startDeltaMin)}
           </div>
           <div class="time-col col-end">
-            ${renderTimeCell(slot.plannedEnd, displayEnd, isDone ? slot.endDeltaMin : slot.endDeltaMin)}
+            ${isDone
+              ? renderTimeCell(slot.plannedEnd, displayEnd, slot.endDeltaMin)
+              : `<span class="time-planned${slot.endDeltaMin !== 0 ? "" : " hidden"}">${slot.plannedEnd}</span>
+                 <span class="time-adjusted${slot.endDeltaMin > 0 ? " late" : slot.endDeltaMin < 0 ? " early" : ""}">${displayEnd}</span>`}
             <div class="task-controls${isDone ? "" : " hidden"}">
               <input
                 type="time"

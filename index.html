@@ -112,6 +112,25 @@
       color: var(--accent);
     }
 
+    .btn-data.btn-save-now {
+      background: var(--success-soft);
+      border-color: var(--success-border);
+      color: var(--success);
+    }
+
+    .save-status {
+      color: var(--text-muted);
+      font-size: 0.58rem;
+      font-weight: 500;
+      line-height: 1.2;
+      max-width: 5.5rem;
+      text-align: right;
+    }
+
+    body.viewer-mode .save-status {
+      display: none;
+    }
+
     .viewer-banner {
       background: var(--accent-2-soft);
       border-bottom: 1px solid var(--accent-2-border);
@@ -994,6 +1013,7 @@
 
       .data-actions {
         flex: 1 1 100%;
+        flex-wrap: wrap;
         gap: 0.3rem;
         order: 3;
       }
@@ -1632,9 +1652,14 @@
       <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
       <div class="data-actions">
+        <button type="button" class="btn-data btn-save-now" data-action="save-now" aria-label="Kaydet"><span class="btn-label-long">Kaydet</span><span class="btn-label-short">Kaydet</span></button>
         <button type="button" class="btn-data btn-share" data-action="share-link" aria-label="Link paylaş"><span class="btn-label-long">Link paylaş</span><span class="btn-label-short">Paylaş</span></button>
+        <button type="button" class="btn-data" data-action="export-json" aria-label="JSON yedek indir"><span class="btn-label-long">JSON yedek</span><span class="btn-label-short">JSON</span></button>
+        <button type="button" class="btn-data" data-action="import-json" aria-label="JSON yedek yükle"><span class="btn-label-long">Yedek yükle</span><span class="btn-label-short">Yükle</span></button>
         <button type="button" class="btn-data" data-action="export-html" aria-label="HTML olarak kaydet"><span class="btn-label-long">HTML kaydet</span><span class="btn-label-short">HTML</span></button>
       </div>
+      <input type="file" id="import-json-input" accept=".json,application/json" hidden aria-hidden="true" />
+      <span class="save-status" id="save-status" aria-live="polite"></span>
     </div>
   </header>
   <main id="day-panels"></main>
@@ -1688,6 +1713,7 @@
 
   <script>
     const STORAGE_KEY = "geziRota_v2";
+    const STORAGE_VERSION = 3;
 
     const DEFAULT_DAYS = /*DEFAULT_DAYS_START*/[
       {
@@ -2001,7 +2027,45 @@
       return true;
     }
 
+    function readStoredPayload() {
+      try {
+        let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) {
+          const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
+          if (v1) saved = { ...v1, daysData: null };
+        }
+        return saved;
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function stateFromSaved(saved, fallbackDays) {
+      const sourceDays = saved.daysData?.length ? saved.daysData : fallbackDays;
+      const nextState = {
+        activeDayId: saved.activeDayId && sourceDays.some((d) => d.id === saved.activeDayId)
+          ? saved.activeDayId
+          : sourceDays[0]?.id || null,
+        days: {}
+      };
+      sourceDays.forEach((day) => {
+        const savedDay = saved.days?.[day.id];
+        nextState.days[day.id] = savedDay
+          ? normalizeSavedDayState(savedDay, day)
+          : getDefaultDayState(day);
+        sanitizeDayCompletion(nextState.days[day.id], day.items.length);
+      });
+      return { days: sourceDays, state: nextState };
+    }
+
     function loadState() {
+      const saved = readStoredPayload();
+      if (saved?.daysData?.length) {
+        const loaded = stateFromSaved(saved, days);
+        days = loaded.days;
+        return { state: loaded.state, persist: false };
+      }
+
       const embedded = getEmbeddedSnapshot();
       const storedEmbedId = localStorage.getItem(STORAGE_KEY + "_embedId");
       const embeddedId = embedded?.snapshotId || EMBEDDED_SNAPSHOT_ID;
@@ -2023,30 +2087,10 @@
         defaults.days[day.id] = getDefaultDayState(day);
       });
 
-      try {
-        let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!saved) {
-          const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
-          if (v1) saved = { ...v1, daysData: null };
-        }
-        if (!saved) return { state: defaults, persist: false };
-
-        if (saved.daysData && Array.isArray(saved.daysData)) {
-          days = saved.daysData;
-        }
-
-        if (saved.activeDayId && days.some((d) => d.id === saved.activeDayId)) {
-          defaults.activeDayId = saved.activeDayId;
-        }
-
-        days.forEach((day) => {
-          const savedDay = saved.days?.[day.id];
-          if (!savedDay) return;
-          defaults.days[day.id] = normalizeSavedDayState(savedDay, day);
-          sanitizeDayCompletion(defaults.days[day.id], day.items.length);
-        });
-      } catch (_) {
-        /* ignore corrupt storage */
+      if (saved) {
+        const loaded = stateFromSaved({ ...saved, daysData: days }, days);
+        days = loaded.days;
+        return { state: loaded.state, persist: false };
       }
 
       return { state: defaults, persist: false };
@@ -2076,9 +2120,57 @@
       });
     }
 
+    function formatSaveTime(iso) {
+      if (!iso) return "";
+      try {
+        const d = new Date(iso);
+        return d.toLocaleString("tr-TR", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch (_) {
+        return "";
+      }
+    }
+
+    function updateSaveStatus(iso) {
+      const el = document.getElementById("save-status");
+      if (!el || isViewerMode) return;
+      el.textContent = iso ? `Son kayıt: ${formatSaveTime(iso)}` : "";
+    }
+
     function saveState() {
       if (isViewerMode) return;
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, daysData: days }));
+      const savedAt = new Date().toISOString();
+      const payload = {
+        ...state,
+        daysData: days,
+        savedAt,
+        version: STORAGE_VERSION
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        updateSaveStatus(savedAt);
+      } catch (_) {
+        showToast("Kaydedilemedi — depolama dolu olabilir");
+      }
+    }
+
+    function manualSave() {
+      if (!requireEdit()) return;
+      saveState();
+      showToast("Cihaza kaydedildi");
+    }
+
+    function setupAutoSave() {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden" && !isViewerMode) saveState();
+      });
+      window.addEventListener("pagehide", () => {
+        if (!isViewerMode) saveState();
+      });
     }
 
     function initViewerFromUrl() {
@@ -2113,6 +2205,7 @@
       const loaded = loadState();
       state = loaded.state;
       if (loaded.persist) saveState();
+      else updateSaveStatus(readStoredPayload()?.savedAt);
     }
 
     function ensureDayState(dayId) {
@@ -2897,6 +2990,18 @@
       return "snap_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
     }
 
+    function buildAdminSnapshot() {
+      saveState();
+      return {
+        kind: "admin-backup",
+        version: STORAGE_VERSION,
+        savedAt: new Date().toISOString(),
+        activeDayId: state.activeDayId,
+        daysData: JSON.parse(JSON.stringify(days)),
+        days: JSON.parse(JSON.stringify(state.days))
+      };
+    }
+
     function buildShareSnapshot() {
       saveState();
       const snapshotId = generateSnapshotId();
@@ -2966,6 +3071,48 @@
       }
     }
 
+    function exportJson() {
+      const snapshot = buildAdminSnapshot();
+      const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gezi-rota-yedek-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("JSON yedek indirildi");
+    }
+
+    function triggerImportJson() {
+      if (!requireEdit()) return;
+      document.getElementById("import-json-input")?.click();
+    }
+
+    function importJsonFile(file) {
+      if (!file || !requireEdit()) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const saved = JSON.parse(String(reader.result || ""));
+          const parsed = parseSnapshotPayload(saved);
+          if (!parsed) {
+            showToast("Geçersiz yedek dosyası");
+            return;
+          }
+          if (!window.confirm("Mevcut programın üzerine yazılsın mı?")) return;
+          days = parsed.days;
+          state = parsed.state;
+          saveState();
+          renderApp();
+          showToast("Yedek yüklendi");
+        } catch (_) {
+          showToast("Yedek okunamadı");
+        }
+      };
+      reader.onerror = () => showToast("Dosya okunamadı");
+      reader.readAsText(file);
+    }
+
     function exportHtml() {
       const snapshot = buildShareSnapshot();
       const daysJson = JSON.stringify(snapshot.daysData, null, 2)
@@ -3007,8 +3154,20 @@
           addDay();
           return;
         }
+        if (e.target.closest("[data-action=save-now]")) {
+          manualSave();
+          return;
+        }
         if (e.target.closest("[data-action=share-link]")) {
           shareLink();
+          return;
+        }
+        if (e.target.closest("[data-action=export-json]")) {
+          exportJson();
+          return;
+        }
+        if (e.target.closest("[data-action=import-json]")) {
+          triggerImportJson();
           return;
         }
         if (e.target.closest("[data-action=export-html]")) {
@@ -3085,6 +3244,11 @@
           }, 300);
         }
       });
+      document.getElementById("import-json-input")?.addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (file) importJsonFile(file);
+        e.target.value = "";
+      });
     }
 
     function selectDay(dayId) {
@@ -3146,6 +3310,7 @@
     }
 
     bootstrapState();
+    setupAutoSave();
     initTimePicker();
     renderApp();
 

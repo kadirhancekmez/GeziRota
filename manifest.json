@@ -1,0 +1,25 @@
+{
+  "name": "Gezi Rota",
+  "short_name": "GeziRota",
+  "description": "Tatil gezi programı ve rota takip uygulaması",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#e6f4f1",
+  "theme_color": "#e6f4f1",
+  "lang": "tr",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

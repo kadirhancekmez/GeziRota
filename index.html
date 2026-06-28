@@ -6,6 +6,9 @@
   <meta name="theme-color" content="#e6f4f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icon.svg">
   <title>Gezi Rota</title>
   <style>
     :root {
@@ -53,6 +56,7 @@
       line-height: 1.5;
       min-height: 100vh;
       -webkit-tap-highlight-color: transparent;
+      overflow-x: clip;
       padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
@@ -74,6 +78,55 @@
       gap: 0.5rem;
       margin: 0 auto;
       max-width: 720px;
+    }
+
+    .data-actions {
+      display: flex;
+      flex-shrink: 0;
+      gap: 0.25rem;
+    }
+
+    .btn-data {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.35rem 0.55rem;
+      white-space: nowrap;
+    }
+
+    .btn-data:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .toast {
+      background: var(--text);
+      border-radius: var(--radius-pill);
+      bottom: calc(3.5rem + env(safe-area-inset-bottom, 0));
+      box-shadow: var(--shadow);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      left: 50%;
+      max-width: calc(100vw - 2rem);
+      opacity: 0;
+      padding: 0.55rem 1rem;
+      pointer-events: none;
+      position: fixed;
+      transform: translateX(-50%) translateY(0.5rem);
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 200;
+    }
+
+    .toast.visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
     }
 
     .tabs {
@@ -411,7 +464,8 @@
 
     .itinerary-table tbody tr {
       border-top: 1px solid var(--border);
-      height: 42px;
+      height: auto;
+      min-height: 42px;
     }
 
     .itinerary-table tbody tr.next-up {
@@ -430,10 +484,10 @@
     }
 
     .col-check { text-align: center; width: 28px; }
-    .col-start { overflow: visible; width: 96px; }
-    .col-end { overflow: visible; width: 132px; }
+    .col-start { overflow: visible; width: 108px; }
+    .col-end { overflow: visible; width: 158px; }
     .col-duration { color: var(--text-muted); font-size: 0.72rem; text-align: right; width: 72px; }
-    .col-edit { text-align: center; width: 56px; }
+    .col-edit { text-align: center; width: 64px; }
     .col-sort { text-align: center; width: 52px; }
 
     .col-stop {
@@ -457,6 +511,15 @@
       width: 20px;
     }
 
+    .task-check:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+
+    .itinerary-table tbody tr.locked {
+      opacity: 0.72;
+    }
+
     .time-chip,
     .btn-now,
     .btn-icon,
@@ -466,16 +529,18 @@
     .btn-reset,
     .btn-add,
     .btn-add-day,
-    .btn-delete-day {
+    .btn-delete-day,
+    .btn-data {
       touch-action: manipulation;
     }
 
     .time-cell {
       align-items: center;
       display: flex;
-      flex-wrap: nowrap;
+      flex-wrap: wrap;
       gap: 0.2rem;
-      white-space: nowrap;
+      max-width: 100%;
+      min-width: 0;
     }
 
     .time-val {
@@ -788,6 +853,11 @@
         padding-top: calc(0.6rem + env(safe-area-inset-top, 0));
       }
 
+      .tabs-bar {
+        max-width: none;
+        width: 100%;
+      }
+
       .day-tab {
         min-height: 40px;
         padding: 0.5rem 1rem;
@@ -805,12 +875,37 @@
         padding: 0.45rem 0.7rem;
       }
 
+      .data-actions {
+        flex-shrink: 0;
+      }
+
+      .btn-data {
+        font-size: 0.65rem;
+        min-height: 40px;
+        padding: 0.4rem 0.5rem;
+      }
+
       main {
         padding-left: 0.4rem;
         padding-right: 0.4rem;
+        padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0));
+      }
+
+      .day-card {
+        overflow: visible;
       }
 
       .day-header { padding: 0.65rem 0.75rem 0.55rem; }
+
+      .day-title-row {
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      .delay-summary {
+        align-self: flex-start;
+        max-width: 100%;
+      }
 
       .day-title { font-size: 0.95rem; }
 
@@ -838,6 +933,7 @@
       }
 
       .day-actions-right {
+        flex-wrap: wrap;
         justify-content: stretch;
         width: 100%;
       }
@@ -845,9 +941,10 @@
       .day-actions-right .btn-reset,
       .day-actions-right .btn-add,
       .day-actions-right .btn-delete-day {
-        flex: 1;
+        flex: 1 1 auto;
         font-size: 0.8rem;
         min-height: 40px;
+        min-width: 0;
         padding: 0.5rem 0.75rem;
         text-align: center;
       }
@@ -865,11 +962,14 @@
         background: transparent;
         border: none;
         overflow: visible;
+        width: 100%;
       }
 
       .itinerary-table {
+        display: block;
         min-width: 0;
         table-layout: auto;
+        width: 100%;
       }
 
       .itinerary-table thead { display: none; }
@@ -878,16 +978,21 @@
         display: flex;
         flex-direction: column;
         gap: 0.5rem;
+        width: 100%;
       }
 
       .itinerary-table tbody tr {
         background: var(--surface-solid);
         border: 1px solid var(--border);
         border-radius: 12px;
+        box-sizing: border-box;
         display: grid;
-        gap: 0.35rem 0.6rem;
+        gap: 0.35rem 0.5rem;
         height: auto;
+        max-width: 100%;
+        min-width: 0;
         padding: 0.65rem 0.75rem;
+        width: 100%;
       }
 
       .itinerary-table tbody tr.next-up {
@@ -901,23 +1006,39 @@
       }
 
       .itinerary-table td {
-        display: flex;
         align-items: center;
-        gap: 0.5rem;
+        box-sizing: border-box;
+        display: flex;
+        gap: 0.45rem;
         justify-content: space-between;
+        max-width: 100%;
+        min-width: 0;
         overflow: visible;
-        padding: 0.2rem 0;
-        width: auto !important;
+        padding: 0.25rem 0;
+        width: 100% !important;
       }
 
       .itinerary-table td[data-label]::before {
         color: var(--text-muted);
         content: attr(data-label);
         flex-shrink: 0;
-        font-size: 0.65rem;
+        font-size: 0.62rem;
         font-weight: 700;
         letter-spacing: 0.03em;
+        min-width: 4.5rem;
         text-transform: uppercase;
+      }
+
+      .itinerary-table td > * {
+        max-width: 100%;
+        min-width: 0;
+      }
+
+      .col-stop {
+        overflow: visible;
+        text-overflow: unset;
+        white-space: normal;
+        word-break: break-word;
       }
 
       /* Kullanım modu kart grid */
@@ -935,6 +1056,7 @@
         grid-area: check;
         justify-content: flex-start;
         padding-top: 0.15rem;
+        width: auto !important;
       }
 
       .mode-usage .col-check::before { display: none; }
@@ -957,15 +1079,36 @@
 
       .mode-usage .col-start { grid-area: start; }
       .mode-usage .col-end { grid-area: end; }
-      .mode-usage .col-duration { grid-area: duration; }
+
+      .mode-usage .col-duration {
+        border-top: 1px solid var(--border);
+        grid-area: duration;
+        margin-top: 0.1rem;
+        padding-top: 0.4rem;
+      }
+
+      .mode-usage .col-start,
+      .mode-usage .col-end {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      .mode-usage .col-start .time-cell,
+      .mode-usage .col-end .time-cell {
+        flex: 1 1 auto;
+        justify-content: flex-end;
+        max-width: 100%;
+        min-width: 0;
+      }
 
       /* Düzenleme modu kart grid */
       .itinerary-table.mode-edit tbody tr {
-        grid-template-columns: 1fr 1fr auto auto;
+        grid-template-columns: 1fr 1fr;
         grid-template-areas:
-          "stop stop stop stop"
-          "start end edit sort"
-          "duration duration duration duration";
+          "stop stop"
+          "start end"
+          "duration duration"
+          "edit sort";
       }
 
       .mode-edit .col-stop {
@@ -975,49 +1118,80 @@
         grid-area: stop;
         justify-content: flex-start;
         line-height: 1.35;
-        margin-bottom: 0.15rem;
+        margin-bottom: 0.1rem;
         padding-bottom: 0.45rem;
         white-space: normal;
       }
 
       .mode-edit .col-stop::before { display: none; }
 
-      .mode-edit .col-start { grid-area: start; }
-      .mode-edit .col-end { grid-area: end; }
-      .mode-edit .col-edit { grid-area: edit; justify-content: center; }
+      .mode-edit .col-start { grid-area: start; justify-content: space-between; }
+      .mode-edit .col-end { grid-area: end; justify-content: space-between; }
+      .mode-edit .col-edit {
+        grid-area: edit;
+        justify-content: flex-start;
+        width: auto !important;
+      }
       .mode-edit .col-edit::before { display: none; }
-      .mode-edit .col-sort { grid-area: sort; justify-content: center; }
+      .mode-edit .col-sort {
+        grid-area: sort;
+        justify-content: flex-end;
+        width: auto !important;
+      }
       .mode-edit .col-sort::before { display: none; }
-      .mode-edit .col-duration { grid-area: duration; }
+      .mode-edit .col-duration {
+        border-top: 1px solid var(--border);
+        grid-area: duration;
+        margin-top: 0.05rem;
+        padding-top: 0.35rem;
+      }
 
       .time-cell {
-        flex: 1;
+        flex: 1 1 auto;
         flex-wrap: wrap;
+        gap: 0.25rem;
         justify-content: flex-end;
+        max-width: 100%;
+        min-width: 0;
+        white-space: normal;
       }
 
       .time-chip {
-        font-size: 0.85rem;
-        min-height: 36px;
-        min-width: 64px;
-        padding: 0.4rem 0.55rem;
+        font-size: 0.82rem;
+        min-height: 34px;
+        min-width: 0;
+        padding: 0.35rem 0.5rem;
       }
 
       .btn-now {
-        font-size: 0.72rem;
-        min-height: 36px;
-        padding: 0.4rem 0.55rem;
+        font-size: 0.68rem;
+        min-height: 34px;
+        padding: 0.35rem 0.45rem;
       }
 
       .btn-icon {
-        min-height: 36px;
-        min-width: 36px;
-        padding: 0.35rem 0.5rem;
+        min-height: 34px;
+        min-width: 34px;
+        padding: 0.3rem 0.45rem;
+      }
+
+      .row-actions {
+        flex-wrap: nowrap;
+        gap: 0.25rem;
+      }
+
+      .delta-inline {
+        font-size: 0.54rem;
+        padding: 0.12rem 0.3rem;
       }
 
       .sort-btns {
         flex-direction: row;
         gap: 0.25rem;
+      }
+
+      .col-duration {
+        font-size: 0.78rem;
       }
 
       .time-picker-grid {
@@ -1078,17 +1252,30 @@
     }
 
     @media (max-width: 380px) {
-      .mode-usage .col-start,
-      .mode-usage .col-end {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.25rem;
-      }
-
       .mode-usage .col-start .time-cell,
       .mode-usage .col-end .time-cell {
         justify-content: flex-start;
         width: 100%;
+      }
+
+      .mode-usage .col-start,
+      .mode-usage .col-end {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.3rem;
+      }
+
+      .itinerary-table td[data-label]::before {
+        min-width: 0;
+      }
+
+      .itinerary-table.mode-edit tbody tr {
+        grid-template-areas:
+          "stop stop"
+          "start start"
+          "end end"
+          "duration duration"
+          "edit sort";
       }
 
       .time-picker-grid {
@@ -1124,7 +1311,12 @@
     <div class="tabs-bar" id="tabs-bar">
       <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
+      <div class="data-actions">
+        <button type="button" class="btn-data" data-action="export-data" aria-label="Veriyi yedekle">Yedekle</button>
+        <button type="button" class="btn-data" data-action="import-data" aria-label="Veriyi geri yükle">Geri yükle</button>
+      </div>
     </div>
+    <input type="file" id="import-file" accept=".json,application/json" hidden aria-hidden="true" />
   </header>
   <main id="day-panels"></main>
 
@@ -1150,6 +1342,9 @@
         <label>Durak
           <input type="text" id="edit-stop" required />
         </label>
+        <label>Link (isteğe bağlı)
+          <input type="url" id="edit-link" placeholder="https://maps.google.com/..." inputmode="url" />
+        </label>
         <div class="edit-sheet-actions">
           <button type="button" class="btn-cancel" data-action="close-edit">İptal</button>
           <button type="submit" class="btn-save">Kaydet</button>
@@ -1159,6 +1354,7 @@
   </div>
 
   <p class="credit-badge"><strong>Kadirhan Çekmez</strong> tarafından hazırlanmıştır</p>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
     const STORAGE_KEY = "geziRota_v2";
@@ -1196,6 +1392,8 @@
     let pickerTarget = null;
     let editTaskTarget = null;
     let eventsBound = false;
+    let lastFocusEl = null;
+    let toastTimer = null;
 
     const HALF_HOUR_OPTIONS = (() => {
       const opts = [];
@@ -1278,8 +1476,23 @@
 
     function formatDelaySummary(mins) {
       if (mins === 0) return "Zamanında";
-      const { text } = formatDelta(mins);
-      return mins > 0 ? text : text;
+      return formatDelta(mins).text;
+    }
+
+    function isItemDone(itemState) {
+      return Boolean(itemState?.done && itemState?.actualEnd);
+    }
+
+    function showToast(message) {
+      const el = document.getElementById("toast");
+      el.textContent = message;
+      el.classList.add("visible");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove("visible"), 2800);
+    }
+
+    function validateSlotTimes(startTime, endTime) {
+      return timeToMinutes(endTime) >= timeToMinutes(startTime);
     }
 
     function getDefaultDayState(day) {
@@ -1328,6 +1541,12 @@
           Object.values(defaults.days[day.id].items).forEach((item) => {
             if (item?.actualEnd) item.actualEnd = snapToHalfHour(item.actualEnd);
           });
+          Object.keys(defaults.days[day.id].items).forEach((key) => {
+            if (!isItemDone(defaults.days[day.id].items[key])) {
+              delete defaults.days[day.id].items[key];
+            }
+          });
+          sanitizeCompletionOrder(defaults.days[day.id], day.items.length);
         });
       } catch (_) {
         /* ignore corrupt storage */
@@ -1435,7 +1654,7 @@
 
     function getDayProgress(day, dayState) {
       const total = day.items.length;
-      const done = Object.values(dayState.items).filter((i) => i.done).length;
+      const done = Object.values(dayState.items).filter(isItemDone).length;
       return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
     }
 
@@ -1450,10 +1669,29 @@
 
     function getNextUpIndex(dayState, itemCount) {
       for (let i = 0; i < itemCount; i++) {
-        const item = dayState.items[String(i)];
-        if (!item?.done) return i;
+        if (!isItemDone(dayState.items[String(i)])) return i;
       }
       return -1;
+    }
+
+    function getLastDoneIndex(dayState, itemCount) {
+      const nextUp = getNextUpIndex(dayState, itemCount);
+      return nextUp <= 0 ? (nextUp === 0 ? -1 : itemCount - 1) : nextUp - 1;
+    }
+
+    function canToggleCheck(dayState, itemCount, index, checked) {
+      const nextUp = getNextUpIndex(dayState, itemCount);
+      if (checked) return index === nextUp;
+      return index === getLastDoneIndex(dayState, itemCount);
+    }
+
+    function sanitizeCompletionOrder(dayState, itemCount) {
+      for (let i = 0; i < itemCount; i++) {
+        if (!isItemDone(dayState.items[String(i)])) {
+          for (let j = i + 1; j < itemCount; j++) delete dayState.items[String(j)];
+          break;
+        }
+      }
     }
 
     function nowTimeString() {
@@ -1478,10 +1716,11 @@
     }
 
     function renderStop(item) {
+      const label = escapeHtml(item.stop);
       if (item.link) {
-        return `<a href="${item.link}" target="_blank" rel="noopener noreferrer">${item.stop}</a>`;
+        return `<a href="${escapeAttr(item.link)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
       }
-      return item.stop;
+      return label;
     }
 
     function defaultActualEnd(day, index, schedule) {
@@ -1581,8 +1820,17 @@
       }
 
       const itemState = dayState.items[String(index)] || {};
-      const isDone = Boolean(itemState.done);
-      const isNext = getNextUpIndex(dayState, itemCount) === index;
+      const isDone = isItemDone(itemState);
+      const nextUp = getNextUpIndex(dayState, itemCount);
+      const isNext = nextUp === index;
+      const canCheck = canToggleCheck(dayState, itemCount, index, !isDone);
+      const isLocked = !isDone && index > nextUp;
+      const checkDisabled = isDone
+        ? !canToggleCheck(dayState, itemCount, index, false)
+        : !canCheck;
+      const checkLabel = checkDisabled && !isDone
+        ? `${item.stop} — önce sıradaki durak tamamlanmalı`
+        : `${item.stop} tamamlandı`;
       const displayEnd = isDone
         ? snapToHalfHour(itemState.actualEnd || slot.adjustedEnd)
         : slot.adjustedEnd;
@@ -1599,10 +1847,10 @@
         : `<div class="time-cell">${renderCompactTime(slot.plannedEnd, displayEnd, endDelta, slot.adjustedEndMin)}</div>`;
 
       return `
-        <tr class="task-row${isDone ? " done" : ""}${isNext ? " next-up" : ""}" data-index="${index}">
+        <tr class="task-row${isDone ? " done" : ""}${isNext ? " next-up" : ""}${isLocked ? " locked" : ""}" data-index="${index}">
           <td class="col-check">
-            <input type="checkbox" class="task-check" aria-label="${item.stop} tamamlandı"
-              ${isDone ? "checked" : ""} data-action="toggle"
+            <input type="checkbox" class="task-check" aria-label="${checkLabel}"
+              ${isDone ? "checked" : ""} ${checkDisabled ? "disabled" : ""} data-action="toggle"
               data-day-id="${day.id}" data-index="${index}" />
           </td>
           <td class="col-start" data-label="Başlangıç">
@@ -1786,9 +2034,11 @@
       if (selected) {
         setTimeout(() => selected.scrollIntoView({ block: "center", behavior: "smooth" }), 50);
       }
+      lastFocusEl = document.activeElement;
       overlay.classList.remove("hidden");
       overlay.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      setTimeout(() => overlay.querySelector(".time-picker-close")?.focus(), 0);
     }
 
     function closeTimePicker() {
@@ -1797,23 +2047,39 @@
       overlay.classList.add("hidden");
       overlay.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
+      restoreFocus();
+    }
+
+    function restoreFocus() {
+      if (lastFocusEl?.focus) {
+        lastFocusEl.focus();
+        lastFocusEl = null;
+      }
     }
 
     function applyPickedTime(dayId, index, field, time) {
       if (!time) return;
       const t = snapToHalfHour(time);
+      const day = days.find((d) => d.id === dayId);
+      if (!day) return;
+
       if (field === "plannedStart") {
-        const day = days.find((d) => d.id === dayId);
+        if (index < day.items.length - 1 && !validateSlotTimes(t, day.items[index + 1].time)) {
+          showToast("Başlangıç, bitiş saatinden önce olmalı");
+          return;
+        }
         day.items[index].time = t;
         saveState();
         renderApp();
       } else if (field === "plannedEnd") {
-        const day = days.find((d) => d.id === dayId);
-        if (index < day.items.length - 1) {
-          day.items[index + 1].time = t;
-          saveState();
-          renderApp();
+        if (index >= day.items.length - 1) return;
+        if (!validateSlotTimes(day.items[index].time, t)) {
+          showToast("Bitiş, başlangıç saatinden sonra olmalı");
+          return;
         }
+        day.items[index + 1].time = t;
+        saveState();
+        renderApp();
       } else {
         setActualEnd(dayId, index, t);
       }
@@ -1824,10 +2090,13 @@
       const item = day.items[index];
       editTaskTarget = { dayId, index };
       document.getElementById("edit-stop").value = item.stop;
+      document.getElementById("edit-link").value = item.link || "";
       const sheet = document.getElementById("edit-task-sheet");
+      lastFocusEl = document.activeElement;
       sheet.classList.remove("hidden");
       sheet.setAttribute("aria-hidden", "false");
       document.body.style.overflow = "hidden";
+      setTimeout(() => document.getElementById("edit-stop")?.focus(), 0);
     }
 
     function closeEditTask() {
@@ -1836,6 +2105,7 @@
       sheet.classList.add("hidden");
       sheet.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
+      restoreFocus();
     }
 
     function saveEditTask() {
@@ -1843,6 +2113,9 @@
       const { dayId, index } = editTaskTarget;
       const day = days.find((d) => d.id === dayId);
       day.items[index].stop = document.getElementById("edit-stop").value.trim();
+      const link = document.getElementById("edit-link").value.trim();
+      if (link) day.items[index].link = link;
+      else delete day.items[index].link;
       closeEditTask();
       saveState();
       renderApp();
@@ -1963,6 +2236,60 @@
       renderApp();
     }
 
+    function exportData() {
+      saveState();
+      const payload = JSON.stringify({ ...state, daysData: days }, null, 2);
+      const blob = new Blob([payload], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `gezi-rota-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast("Yedek indirildi");
+    }
+
+    function importData(file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const saved = JSON.parse(reader.result);
+          if (!saved || typeof saved !== "object") throw new Error("invalid");
+          if (!saved.daysData || !Array.isArray(saved.daysData) || saved.daysData.length === 0) {
+            showToast("Geçersiz yedek dosyası");
+            return;
+          }
+          days = saved.daysData;
+          state = {
+            activeDayId: saved.activeDayId && days.some((d) => d.id === saved.activeDayId)
+              ? saved.activeDayId
+              : days[0].id,
+            days: {}
+          };
+          days.forEach((day) => {
+            const savedDay = saved.days?.[day.id];
+            state.days[day.id] = savedDay
+              ? {
+                  activeView: savedDay.activeView === "notes" ? "notes" : "program",
+                  mode: savedDay.mode === "edit" ? "edit" : "usage",
+                  notes: typeof savedDay.notes === "string" ? savedDay.notes : day.notes || "",
+                  items: savedDay.items && typeof savedDay.items === "object" ? savedDay.items : {}
+                }
+              : getDefaultDayState(day);
+            sanitizeCompletionOrder(state.days[day.id], day.items.length);
+          });
+          closeEditTask();
+          closeTimePicker();
+          saveState();
+          renderApp();
+          showToast("Yedek geri yüklendi");
+        } catch (_) {
+          showToast("Dosya okunamadı");
+        }
+      };
+      reader.readAsText(file);
+    }
+
     function bindEvents() {
       if (eventsBound) return;
       eventsBound = true;
@@ -1972,8 +2299,30 @@
           addDay();
           return;
         }
+        if (e.target.closest("[data-action=export-data]")) {
+          exportData();
+          return;
+        }
+        if (e.target.closest("[data-action=import-data]")) {
+          document.getElementById("import-file").click();
+          return;
+        }
         const tab = e.target.closest(".day-tab");
         if (tab) selectDay(tab.dataset.dayId);
+      });
+
+      document.getElementById("import-file").addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (file) importData(file);
+        e.target.value = "";
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "Escape") return;
+        const picker = document.getElementById("time-picker");
+        const editSheet = document.getElementById("edit-task-sheet");
+        if (!picker.classList.contains("hidden")) closeTimePicker();
+        else if (!editSheet.classList.contains("hidden")) closeEditTask();
       });
 
       document.getElementById("day-panels").addEventListener("click", (e) => {
@@ -2044,6 +2393,14 @@
       const schedule = computeSchedule(day.items, dayState);
       const key = String(index);
 
+      if (!canToggleCheck(dayState, day.items.length, index, checked)) {
+        showToast(checked
+          ? "Önce sıradaki durağı tamamlayın"
+          : "Yalnızca en son tamamlanan durağı geri alabilirsiniz");
+        renderApp();
+        return;
+      }
+
       if (checked) {
         dayState.items[key] = {
           done: true,
@@ -2051,10 +2408,6 @@
         };
       } else {
         delete dayState.items[key];
-        const keys = Object.keys(dayState.items).map(Number).sort((a, b) => a - b);
-        for (const k of keys) {
-          if (k > index) delete dayState.items[String(k)];
-        }
       }
 
       saveState();
@@ -2079,6 +2432,10 @@
 
     initTimePicker();
     renderApp();
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js").catch(() => {});
+    }
   </script>
 </body>
 </html>

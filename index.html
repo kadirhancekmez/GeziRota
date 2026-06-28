@@ -123,8 +123,28 @@
     }
 
     body.viewer-mode .btn-add-day,
-    body.viewer-mode .data-actions {
-      display: none;
+    body.viewer-mode .data-actions,
+    body.viewer-mode .day-actions,
+    body.viewer-mode .mode-toggle,
+    body.viewer-mode .btn-reset,
+    body.viewer-mode .btn-add,
+    body.viewer-mode .btn-delete-day,
+    body.viewer-mode .task-check,
+    body.viewer-mode .btn-now,
+    body.viewer-mode .col-edit,
+    body.viewer-mode .col-sort,
+    body.viewer-mode .btn-icon,
+    body.viewer-mode .time-chip,
+    body.viewer-mode .duration-chip,
+    body.viewer-mode .notes-area,
+    body.viewer-mode .day-title-input {
+      display: none !important;
+      pointer-events: none !important;
+    }
+
+    body.viewer-mode .itinerary-table.mode-edit,
+    body.viewer-mode .itinerary-table.mode-usage .col-check {
+      display: none !important;
     }
 
     body.viewer-mode .top-bar {
@@ -1699,6 +1719,7 @@
     const EMBEDDED_SNAPSHOT_ID = /*EMBED_ID_START*/ null /*EMBED_ID_END*/;
 
     let isViewerMode = false;
+    let viewerSnapshot = null;
     let days = JSON.parse(JSON.stringify(DEFAULT_DAYS));
     let state = { activeDayId: days[0]?.id || null, days: {} };
     let notesDebounce = null;
@@ -2031,16 +2052,40 @@
       return { state: defaults, persist: false };
     }
 
+    function requireEdit() {
+      if (!isViewerMode) return true;
+      showToast("Salt okunur — değişiklik yapılamaz");
+      return false;
+    }
+
+    function getViewerPayload() {
+      const hash = location.hash;
+      if (hash.startsWith("#t=")) return hash.slice(3);
+      const t = new URLSearchParams(location.search).get("t");
+      return t || null;
+    }
+
+    function restoreViewerSnapshot() {
+      if (!isViewerMode || !viewerSnapshot) return;
+      const snap = JSON.parse(viewerSnapshot);
+      days = JSON.parse(JSON.stringify(snap.days));
+      state = JSON.parse(JSON.stringify(snap.state));
+      days.forEach((day) => {
+        const ds = ensureDayState(day.id);
+        ds.mode = "viewer";
+      });
+    }
+
     function saveState() {
       if (isViewerMode) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, daysData: days }));
     }
 
-    function initViewerFromHash() {
-      const hash = location.hash;
-      if (!hash.startsWith("#t=")) return false;
+    function initViewerFromUrl() {
+      const payload = getViewerPayload();
+      if (!payload) return false;
       try {
-        const json = LZString.decompressFromEncodedURIComponent(hash.slice(3));
+        const json = LZString.decompressFromEncodedURIComponent(payload);
         if (!json) return false;
         const saved = JSON.parse(json);
         const parsed = parseSnapshotPayload(saved);
@@ -2052,6 +2097,7 @@
           ds.mode = "viewer";
           ds.activeView = ds.activeView || "program";
         });
+        viewerSnapshot = JSON.stringify({ days, state });
         isViewerMode = true;
         document.body.classList.add("viewer-mode");
         document.getElementById("viewer-banner")?.classList.remove("hidden");
@@ -2063,7 +2109,7 @@
     }
 
     function bootstrapState() {
-      if (initViewerFromHash()) return;
+      if (initViewerFromUrl()) return;
       const loaded = loadState();
       state = loaded.state;
       if (loaded.persist) saveState();
@@ -2530,6 +2576,7 @@
     }
 
     function renderApp() {
+      restoreViewerSnapshot();
       document.getElementById("tabs").innerHTML = days.map(renderTab).join("");
       document.getElementById("day-panels").innerHTML = days.map(renderDayPanel).join("");
       bindEvents();
@@ -2586,6 +2633,7 @@
     };
 
     function openTimePicker(dayId, index, currentValue, field) {
+      if (!requireEdit()) return;
       pickerTarget = { dayId, index, field: field || "actualEnd" };
       document.getElementById("time-picker-title").textContent =
         PICKER_TITLES[pickerTarget.field] || "Saat seç";
@@ -2615,6 +2663,7 @@
     }
 
     function openDurationPicker(dayId, index, currentMins) {
+      if (!requireEdit()) return;
       durationTarget = { dayId, index };
       const overlay = document.getElementById("duration-picker");
       const current = Number(currentMins) || 0;
@@ -2642,6 +2691,7 @@
     }
 
     function applyPickedDuration(dayId, index, durationMin) {
+      if (!requireEdit()) return;
       if (!durationMin || durationMin <= 0) return;
       const day = days.find((d) => d.id === dayId);
       if (!day) return;
@@ -2658,6 +2708,7 @@
     }
 
     function applyPickedTime(dayId, index, field, time) {
+      if (!requireEdit()) return;
       if (!time) return;
       const t = snapToHalfHour(time);
       const day = days.find((d) => d.id === dayId);
@@ -2682,6 +2733,7 @@
     }
 
     function openEditTask(dayId, index) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       const item = day.items[index];
       editTaskTarget = { dayId, index };
@@ -2705,6 +2757,7 @@
     }
 
     function saveEditTask() {
+      if (!requireEdit()) return;
       if (!editTaskTarget) return;
       const { dayId, index } = editTaskTarget;
       const day = days.find((d) => d.id === dayId);
@@ -2729,6 +2782,7 @@
     }
 
     function deleteTask(dayId, index) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       if (!day || day.items.length <= 1) return;
       const dayState = ensureDayState(dayId);
@@ -2756,6 +2810,7 @@
     }
 
     function moveTask(dayId, index, direction) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       const newIdx = index + direction;
       if (newIdx < 0 || newIdx >= day.items.length) return;
@@ -2767,6 +2822,7 @@
     }
 
     function addTask(dayId) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       if (day.items.length > 0) delete day.items[day.items.length - 1].endTime;
       const lastEnd = getPlannedEnd(day.items, day.items.length - 1);
@@ -2778,6 +2834,7 @@
     }
 
     function setMode(dayId, mode) {
+      if (!requireEdit()) return;
       ensureDayState(dayId).mode = mode;
       saveState();
       renderApp();
@@ -2796,6 +2853,7 @@
     }
 
     function addDay() {
+      if (!requireEdit()) return;
       const num = days.length + 1;
       const id = generateDayId();
       const newDay = {
@@ -2813,6 +2871,7 @@
     }
 
     function deleteDay(dayId) {
+      if (!requireEdit()) return;
       if (days.length <= 1) return;
       const idx = days.findIndex((d) => d.id === dayId);
       if (idx === -1) return;
@@ -2880,7 +2939,9 @@
     function buildShareUrl() {
       const snapshot = buildShareSnapshot();
       const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(snapshot));
-      return `${getShareBaseUrl()}#t=${compressed}`;
+      const base = getShareBaseUrl();
+      const sep = base.includes("?") ? "&" : "?";
+      return `${base}${sep}t=${compressed}`;
     }
 
     async function shareLink() {
@@ -2937,6 +2998,11 @@
       eventsBound = true;
 
       document.getElementById("tabs-bar").addEventListener("click", (e) => {
+        if (isViewerMode) {
+          const tab = e.target.closest(".day-tab");
+          if (tab) selectDay(tab.dataset.dayId);
+          return;
+        }
         if (e.target.closest("[data-action=add-day]")) {
           addDay();
           return;
@@ -2969,8 +3035,13 @@
 
         const { action, dayId, index, view, mode, field } = el.dataset;
 
+        if (action === "view") {
+          setView(dayId, view);
+          return;
+        }
+        if (isViewerMode) return;
+
         if (action === "now") setActualEnd(dayId, Number(index), nowTimeString());
-        if (action === "view") setView(dayId, view);
         if (action === "reset") resetDay(dayId);
         if (action === "set-mode") setMode(dayId, mode);
         if (action === "open-picker") openTimePicker(dayId, Number(index), el.dataset.current, field || "actualEnd");
@@ -2984,12 +3055,14 @@
       });
 
       document.getElementById("day-panels").addEventListener("change", (e) => {
+        if (isViewerMode) return;
         const el = e.target.closest("[data-action=toggle]");
         if (!el) return;
         toggleItem(el.dataset.dayId, Number(el.dataset.index), el.checked);
       });
 
       document.getElementById("day-panels").addEventListener("input", (e) => {
+        if (isViewerMode) return;
         const notesEl = e.target.closest("[data-action=notes]");
         if (notesEl) {
           clearTimeout(notesDebounce);
@@ -3027,6 +3100,7 @@
     }
 
     function toggleItem(dayId, index, checked) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       const dayState = ensureDayState(dayId);
       const schedule = computeSchedule(day.items, dayState);
@@ -3054,6 +3128,7 @@
     }
 
     function setActualEnd(dayId, index, time) {
+      if (!requireEdit()) return;
       if (!time) return;
       const dayState = ensureDayState(dayId);
       const key = String(index);
@@ -3063,6 +3138,7 @@
     }
 
     function resetDay(dayId) {
+      if (!requireEdit()) return;
       const day = days.find((d) => d.id === dayId);
       state.days[dayId] = getDefaultDayState(day);
       saveState();

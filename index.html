@@ -8,8 +8,9 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>Gezi Rota</title>
+  <script src="lz-string.min.js"></script>
   <style>
     :root {
       --bg: linear-gradient(165deg, #e6f4f1 0%, #cce8f4 42%, #e2f3e8 100%);
@@ -103,6 +104,49 @@
       background: var(--accent-soft);
       border-color: var(--accent-border);
       color: var(--accent);
+    }
+
+    .btn-data.btn-share {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .viewer-banner {
+      background: var(--accent-2-soft);
+      border-bottom: 1px solid var(--accent-2-border);
+      color: var(--text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 0.55rem 1rem;
+      text-align: center;
+    }
+
+    body.viewer-mode .btn-add-day,
+    body.viewer-mode .data-actions {
+      display: none;
+    }
+
+    body.viewer-mode .top-bar {
+      padding-top: max(0.75rem, env(safe-area-inset-top, 0));
+    }
+
+    .notes-readonly {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      min-height: 8rem;
+      padding: 0.85rem 1rem;
+      white-space: pre-wrap;
+    }
+
+    .notes-readonly:empty::before {
+      color: var(--text-muted);
+      content: "Not yok.";
     }
 
     .toast {
@@ -332,6 +376,28 @@
       display: flex;
       justify-content: center;
       padding: 0.5rem 0.75rem 0;
+    }
+
+    .day-toolbar {
+      display: block;
+    }
+
+    @media (min-width: 641px) {
+      .day-toolbar .day-actions {
+        align-items: center;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+        padding: 0 0.75rem;
+      }
+    }
+
+    .duration-short { display: none; }
+
+    .btn-label-short,
+    .btn-now-short {
+      display: none;
     }
 
     .sub-bar {
@@ -878,114 +944,179 @@
 
     @media (max-width: 640px) {
       .top-bar {
-        padding: 0.6rem 0.75rem;
-        padding-top: calc(0.6rem + env(safe-area-inset-top, 0));
+        padding: 0.5rem 0.65rem;
+        padding-top: calc(0.5rem + env(safe-area-inset-top, 0));
       }
 
       .tabs-bar {
+        align-items: stretch;
+        flex-wrap: wrap;
+        gap: 0.35rem;
         max-width: none;
         width: 100%;
       }
 
-      .day-tab {
-        min-height: 40px;
-        padding: 0.5rem 1rem;
-      }
-
       .tabs {
+        flex: 1 1 auto;
         justify-content: flex-start;
-        padding-bottom: 0.15rem;
+        min-width: 0;
+        order: 1;
         -webkit-overflow-scrolling: touch;
       }
 
       .btn-add-day {
-        font-size: 0.78rem;
-        min-height: 40px;
-        padding: 0.45rem 0.7rem;
+        flex-shrink: 0;
+        font-size: 0.75rem;
+        min-height: 44px;
+        order: 2;
+        padding: 0.4rem 0.65rem;
       }
 
       .data-actions {
-        flex-shrink: 0;
+        flex: 1 1 100%;
+        gap: 0.3rem;
+        order: 3;
       }
 
-      .btn-data {
-        font-size: 0.65rem;
-        min-height: 40px;
-        padding: 0.4rem 0.5rem;
+      .data-actions .btn-data {
+        flex: 1;
+        font-size: 0.62rem;
+        min-height: 44px;
+        min-width: 0;
+        padding: 0.35rem 0.4rem;
+      }
+
+      .btn-label-long { display: none; }
+      .btn-label-short { display: inline; }
+      .btn-now-long { display: none; }
+      .btn-now-short { display: inline; }
+
+      .day-tab {
+        min-height: 44px;
+        padding: 0.4rem 0.85rem;
       }
 
       main {
-        padding-left: 0.4rem;
-        padding-right: 0.4rem;
-        padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0));
+        padding-left: 0.35rem;
+        padding-right: 0.35rem;
+        padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0));
       }
 
-      .day-card {
-        overflow: visible;
-      }
+      .day-card { overflow: visible; }
 
-      .day-header { padding: 0.65rem 0.75rem 0.55rem; }
+      .day-header {
+        padding: 0.5rem 0.65rem 0.4rem;
+      }
 
       .day-title-row {
-        flex-direction: column;
-        gap: 0.4rem;
+        align-items: center;
+        flex-direction: row;
+        gap: 0.35rem;
+        margin-bottom: 0.35rem;
+      }
+
+      .day-title {
+        flex: 1;
+        font-size: 0.88rem;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       .delay-summary {
-        align-self: flex-start;
-        max-width: 100%;
+        flex-shrink: 0;
+        font-size: 0.68rem;
+        max-width: none;
+        padding: 0.18rem 0.5rem;
       }
-
-      .day-title { font-size: 0.95rem; }
 
       .day-title-input {
         font-size: 16px;
-        min-height: 40px;
+        min-height: 36px;
       }
 
-      .day-body { padding: 0.4rem 0.5rem 0.65rem; }
-
-      .day-actions {
-        align-items: stretch;
-        flex-direction: column;
-        gap: 0.4rem;
+      .progress-wrap {
+        align-items: center;
+        display: flex;
+        gap: 0.45rem;
       }
 
-      .mode-toggle { justify-content: center; width: 100%; }
+      .progress-label {
+        flex-shrink: 0;
+        font-size: 0.65rem;
+        margin-bottom: 0;
+        white-space: nowrap;
+      }
+
+      .progress-bar {
+        flex: 1;
+        height: 5px;
+      }
+
+      .day-toolbar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        justify-content: space-between;
+        padding: 0.25rem 0.5rem 0.35rem;
+      }
+
+      .sub-bar-wrap {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 0;
+      }
+
+      .sub-bar {
+        width: 100%;
+      }
+
+      .sub-tab {
+        flex: 1;
+        font-size: 0.75rem;
+        min-height: 44px;
+        padding: 0.35rem 0.65rem;
+      }
+
+      .day-toolbar .day-actions {
+        align-items: center;
+        display: flex;
+        flex: 1 1 auto;
+        gap: 0.35rem;
+        justify-content: flex-end;
+        margin-bottom: 0;
+        min-width: 0;
+        padding: 0;
+      }
+
+      .mode-toggle {
+        flex-shrink: 0;
+      }
 
       .mode-btn {
-        flex: 1;
-        font-size: 0.8rem;
-        min-height: 40px;
-        padding: 0.5rem 0.75rem;
-        text-align: center;
+        font-size: 0.68rem;
+        min-height: 44px;
+        padding: 0.35rem 0.55rem;
       }
 
       .day-actions-right {
-        flex-wrap: wrap;
-        justify-content: stretch;
-        width: 100%;
+        flex-shrink: 0;
       }
 
       .day-actions-right .btn-reset,
       .day-actions-right .btn-add,
       .day-actions-right .btn-delete-day {
-        flex: 1 1 auto;
-        font-size: 0.8rem;
-        min-height: 40px;
-        min-width: 0;
-        padding: 0.5rem 0.75rem;
-        text-align: center;
+        font-size: 0.68rem;
+        min-height: 44px;
+        padding: 0.35rem 0.55rem;
+        white-space: nowrap;
       }
 
-      .sub-tab {
-        flex: 1;
-        min-height: 40px;
-        padding: 0.5rem 1rem;
-        text-align: center;
+      .day-body {
+        padding: 0.25rem 0.35rem 0.5rem;
       }
-
-      .sub-bar { width: 100%; }
 
       .itinerary-wrap {
         background: transparent;
@@ -997,36 +1128,106 @@
       .itinerary-table {
         display: block;
         min-width: 0;
-        table-layout: auto;
         width: 100%;
       }
 
-      .itinerary-table thead { display: none; }
+      .itinerary-table thead {
+        background: rgba(0, 0, 0, 0.03);
+        border-radius: 8px;
+        display: block;
+        margin-bottom: 0.25rem;
+        pointer-events: none;
+        position: sticky;
+        top: calc(2.75rem + env(safe-area-inset-top, 0));
+        z-index: 4;
+      }
+
+      .itinerary-table.mode-edit thead {
+        display: none;
+      }
+
+      .itinerary-table thead tr {
+        display: grid;
+        gap: 0.25rem 0.35rem;
+        padding: 0.3rem 0.55rem;
+      }
+
+      .itinerary-table.mode-usage thead tr {
+        grid-template-areas: "check stop start end duration";
+        grid-template-columns: 36px minmax(0, 1fr) minmax(46px, auto) minmax(72px, auto) minmax(42px, auto);
+      }
+
+      .itinerary-table.mode-viewer thead tr {
+        grid-template-areas: "stop start end duration";
+        grid-template-columns: minmax(0, 1fr) minmax(46px, auto) minmax(72px, auto) minmax(42px, auto);
+      }
+
+      .itinerary-table.mode-edit thead tr {
+        grid-template-areas: "stop start end duration edit sort";
+        grid-template-columns: minmax(0, 1fr) minmax(44px, auto) minmax(44px, auto) minmax(44px, auto) minmax(56px, auto) minmax(48px, auto);
+      }
+
+      .itinerary-table thead th {
+        background: transparent;
+        font-size: 0.55rem;
+        letter-spacing: 0.04em;
+        overflow: hidden;
+        padding: 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .itinerary-table.mode-usage thead .col-duration,
+      .itinerary-table.mode-edit thead .col-duration {
+        text-align: right;
+      }
+
+      .itinerary-table.mode-usage thead .col-check { grid-area: check; }
+      .itinerary-table.mode-usage thead .col-stop { grid-area: stop; }
+      .itinerary-table.mode-usage thead .col-start { grid-area: start; }
+      .itinerary-table.mode-usage thead .col-end { grid-area: end; }
+      .itinerary-table.mode-usage thead .col-duration { grid-area: duration; }
+
+      .itinerary-table.mode-viewer thead .col-stop { grid-area: stop; }
+      .itinerary-table.mode-viewer thead .col-start { grid-area: start; }
+      .itinerary-table.mode-viewer thead .col-end { grid-area: end; }
+      .itinerary-table.mode-viewer thead .col-duration { grid-area: duration; text-align: right; }
+
+      .itinerary-table.mode-edit thead .col-stop { grid-area: stop; }
+      .itinerary-table.mode-edit thead .col-start { grid-area: start; }
+      .itinerary-table.mode-edit thead .col-end { grid-area: end; }
+      .itinerary-table.mode-edit thead .col-duration { grid-area: duration; }
+      .itinerary-table.mode-edit thead .col-edit { grid-area: edit; }
+      .itinerary-table.mode-edit thead .col-sort { grid-area: sort; }
 
       .itinerary-table tbody {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
+        gap: 0.3rem;
         width: 100%;
       }
 
       .itinerary-table tbody tr {
+        align-items: center;
         background: var(--surface-solid);
         border: 1px solid var(--border);
-        border-radius: 12px;
+        border-radius: 10px;
         box-sizing: border-box;
         display: grid;
-        gap: 0.35rem 0.5rem;
+        gap: 0.2rem 0.35rem;
         height: auto;
+        isolation: isolate;
         max-width: 100%;
+        min-height: 44px;
         min-width: 0;
-        padding: 0.65rem 0.75rem;
+        padding: 0.4rem 0.55rem;
         width: 100%;
       }
 
       .itinerary-table tbody tr.next-up {
         background: var(--accent-2-soft);
-        box-shadow: inset 0 3px 0 0 var(--accent-2);
+        border-left: 3px solid var(--accent-2);
+        box-shadow: none;
       }
 
       .itinerary-table tbody tr.done {
@@ -1038,24 +1239,27 @@
         align-items: center;
         box-sizing: border-box;
         display: flex;
-        gap: 0.45rem;
-        justify-content: space-between;
+        gap: 0.2rem;
+        justify-content: flex-end;
         max-width: 100%;
         min-width: 0;
         overflow: visible;
-        padding: 0.25rem 0;
-        width: 100% !important;
+        padding: 0;
+        width: auto !important;
+      }
+
+      .itinerary-table td.col-check,
+      .itinerary-table td.col-start,
+      .itinerary-table td.col-end,
+      .itinerary-table td.col-edit,
+      .itinerary-table td.col-sort,
+      .itinerary-table td.col-duration {
+        position: relative;
+        z-index: 1;
       }
 
       .itinerary-table td[data-label]::before {
-        color: var(--text-muted);
-        content: attr(data-label);
-        flex-shrink: 0;
-        font-size: 0.62rem;
-        font-weight: 700;
-        letter-spacing: 0.03em;
-        min-width: 4.5rem;
-        text-transform: uppercase;
+        display: none;
       }
 
       .itinerary-table td > * {
@@ -1063,32 +1267,20 @@
         min-width: 0;
       }
 
-      .col-stop {
-        overflow: visible;
-        text-overflow: unset;
-        white-space: normal;
-        word-break: break-word;
-      }
-
-      /* Kullanım modu kart grid */
+      /* Kullanım modu — kompakt tek satır */
       .itinerary-table.mode-usage tbody tr {
-        grid-template-columns: auto 1fr;
-        grid-template-areas:
-          "check stop"
-          "start start"
-          "end end"
-          "duration duration";
+        grid-template-columns: 36px minmax(0, 1fr) minmax(46px, auto) minmax(72px, auto) minmax(42px, auto);
+        grid-template-areas: "check stop start end duration";
       }
 
       .mode-usage .col-check {
-        align-self: start;
         grid-area: check;
-        justify-content: flex-start;
-        padding-top: 0.15rem;
+        justify-content: center;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.35rem 0.15rem;
         width: auto !important;
       }
-
-      .mode-usage .col-check::before { display: none; }
 
       .mode-usage .col-check .task-check {
         height: 24px;
@@ -1096,132 +1288,207 @@
       }
 
       .mode-usage .col-stop {
-        font-size: 0.88rem;
+        font-size: 0.8rem;
         font-weight: 600;
         grid-area: stop;
         justify-content: flex-start;
-        line-height: 1.35;
-        white-space: normal;
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .mode-usage .col-stop::before { display: none; }
+      .mode-usage .col-stop a {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-      .mode-usage .col-start { grid-area: start; }
-      .mode-usage .col-end { grid-area: end; }
+      .mode-usage .col-start {
+        grid-area: start;
+        justify-content: flex-end;
+      }
+
+      .mode-usage .col-end {
+        grid-area: end;
+        justify-content: flex-end;
+      }
 
       .mode-usage .col-duration {
-        border-top: 1px solid var(--border);
+        color: var(--text-muted);
+        font-size: 0.65rem;
         grid-area: duration;
-        margin-top: 0.1rem;
-        padding-top: 0.4rem;
-      }
-
-      .mode-usage .col-start,
-      .mode-usage .col-end {
-        align-items: flex-start;
-        flex-wrap: wrap;
+        justify-content: flex-end;
+        text-align: right;
       }
 
       .mode-usage .col-start .time-cell,
       .mode-usage .col-end .time-cell {
-        flex: 1 1 auto;
+        flex-wrap: nowrap;
+        gap: 0.15rem;
         justify-content: flex-end;
-        max-width: 100%;
-        min-width: 0;
       }
 
-      /* Düzenleme modu kart grid */
-      .itinerary-table.mode-edit tbody tr {
-        grid-template-columns: 1fr 1fr;
-        grid-template-areas:
-          "stop stop"
-          "start end"
-          "duration duration"
-          "edit sort";
+      .mode-usage .time-val {
+        font-size: 0.72rem;
       }
 
-      .mode-edit .col-stop {
-        border-bottom: 1px solid var(--border);
-        font-size: 0.88rem;
+      .mode-usage .col-end .btn-now {
+        font-size: 0.58rem;
+        min-height: 36px;
+        min-width: 36px;
+        padding: 0.25rem 0.4rem;
+      }
+
+      .mode-usage .col-end .time-chip {
+        font-size: 0.72rem;
+        min-height: 36px;
+        padding: 0.25rem 0.35rem;
+      }
+
+      .mode-usage .col-end .delta-inline,
+      .mode-usage .col-end .delta-mobile-hide {
+        display: none;
+      }
+
+      .itinerary-table.mode-viewer thead tr {
+        grid-template-areas: "stop start end duration";
+        grid-template-columns: minmax(0, 1fr) minmax(46px, auto) minmax(72px, auto) minmax(42px, auto);
+      }
+
+      .itinerary-table.mode-viewer tbody tr {
+        grid-template-areas: "stop start end duration";
+        grid-template-columns: minmax(0, 1fr) minmax(46px, auto) minmax(72px, auto) minmax(42px, auto);
+      }
+
+      .mode-viewer .col-stop {
+        font-size: 0.8rem;
         font-weight: 600;
         grid-area: stop;
         justify-content: flex-start;
-        line-height: 1.35;
-        margin-bottom: 0.1rem;
-        padding-bottom: 0.45rem;
-        white-space: normal;
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
-      .mode-edit .col-stop::before { display: none; }
+      .mode-viewer .col-start { grid-area: start; justify-content: flex-end; }
+      .mode-viewer .col-end { grid-area: end; justify-content: flex-end; }
+      .mode-viewer .col-duration {
+        color: var(--text-muted);
+        font-size: 0.65rem;
+        grid-area: duration;
+        justify-content: flex-end;
+      }
 
-      .mode-edit .col-start { grid-area: start; justify-content: space-between; }
-      .mode-edit .col-end { grid-area: end; justify-content: space-between; }
+      .mode-viewer .time-val {
+        font-size: 0.72rem;
+      }
+
+      /* Düzenleme modu — 2 satır (durak üstte, kontroller altta) */
+      .itinerary-table.mode-edit tbody tr {
+        grid-template-areas:
+          "stop stop stop stop stop stop"
+          "start end duration edit sort .";
+        grid-template-columns: minmax(0, 1fr) minmax(44px, auto) minmax(44px, auto) minmax(44px, auto) minmax(56px, auto) minmax(48px, auto);
+      }
+
+      .mode-edit .col-stop {
+        border-bottom: none;
+        font-size: 0.78rem;
+        font-weight: 600;
+        grid-area: stop;
+        justify-content: flex-start;
+        line-height: 1.25;
+        margin-bottom: 0;
+        overflow: hidden;
+        padding-bottom: 0;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .mode-edit .col-start,
+      .mode-edit .col-end {
+        justify-content: center;
+      }
+
+      .mode-edit .col-duration {
+        grid-area: duration;
+        justify-content: flex-end;
+        margin-top: 0;
+        padding-top: 0;
+      }
+
       .mode-edit .col-edit {
         grid-area: edit;
-        justify-content: flex-start;
+        justify-content: center;
         width: auto !important;
       }
-      .mode-edit .col-edit::before { display: none; }
+
       .mode-edit .col-sort {
         grid-area: sort;
         justify-content: flex-end;
         width: auto !important;
       }
-      .mode-edit .col-sort::before { display: none; }
-      .mode-edit .col-duration {
-        border-top: 1px solid var(--border);
-        grid-area: duration;
-        margin-top: 0.05rem;
-        padding-top: 0.35rem;
+
+      .mode-edit .duration-chip {
+        font-size: 0.62rem;
+        min-height: 36px;
+        padding: 0.2rem 0.35rem;
+      }
+
+      .mode-edit .time-chip {
+        font-size: 0.68rem;
+        min-height: 36px;
+        padding: 0.2rem 0.35rem;
       }
 
       .time-cell {
-        flex: 1 1 auto;
-        flex-wrap: wrap;
-        gap: 0.25rem;
+        flex-wrap: nowrap;
+        gap: 0.15rem;
         justify-content: flex-end;
-        max-width: 100%;
-        min-width: 0;
-        white-space: normal;
+        white-space: nowrap;
       }
 
       .time-chip {
-        font-size: 0.82rem;
-        min-height: 34px;
+        font-size: 0.72rem;
+        min-height: 36px;
         min-width: 0;
-        padding: 0.35rem 0.5rem;
+        padding: 0.25rem 0.35rem;
       }
 
       .btn-now {
-        font-size: 0.68rem;
-        min-height: 34px;
-        padding: 0.35rem 0.45rem;
+        font-size: 0.58rem;
+        min-height: 36px;
+        min-width: 36px;
+        padding: 0.25rem 0.4rem;
       }
 
       .btn-icon {
-        min-height: 34px;
-        min-width: 34px;
-        padding: 0.3rem 0.45rem;
+        min-height: 44px;
+        min-width: 44px;
+        padding: 0.25rem 0.4rem;
       }
 
       .row-actions {
         flex-wrap: nowrap;
-        gap: 0.25rem;
+        gap: 0.15rem;
       }
 
       .delta-inline {
-        font-size: 0.54rem;
-        padding: 0.12rem 0.3rem;
+        font-size: 0.5rem;
+        max-width: 2.2rem;
+        overflow: hidden;
+        padding: 0.08rem 0.2rem;
+        text-overflow: ellipsis;
       }
 
       .sort-btns {
         flex-direction: row;
-        gap: 0.25rem;
+        gap: 0.15rem;
       }
 
-      .col-duration {
-        font-size: 0.78rem;
-      }
+      .duration-short { display: none; }
 
       .time-picker-grid {
         grid-template-columns: repeat(3, 1fr);
@@ -1270,45 +1537,48 @@
 
       .credit-badge {
         bottom: calc(0.5rem + env(safe-area-inset-bottom, 0));
-        font-size: 0.6rem;
-        left: 50%;
-        max-width: calc(100vw - 2rem);
-        right: auto;
-        text-align: center;
-        transform: translateX(-50%);
+        font-size: 0.58rem;
+        left: auto;
+        max-width: calc(100vw - 1.5rem);
+        pointer-events: none;
+        right: 0.5rem;
+        text-align: right;
+        transform: none;
         white-space: nowrap;
       }
     }
 
     @media (max-width: 380px) {
-      .mode-usage .col-start .time-cell,
-      .mode-usage .col-end .time-cell {
-        justify-content: flex-start;
-        width: 100%;
-      }
-
-      .mode-usage .col-start,
-      .mode-usage .col-end {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.3rem;
-      }
-
-      .itinerary-table td[data-label]::before {
-        min-width: 0;
+      .itinerary-table.mode-usage thead tr,
+      .itinerary-table.mode-usage tbody tr {
+        grid-template-columns: 34px minmax(0, 1fr) minmax(42px, auto) minmax(68px, auto) minmax(36px, auto);
       }
 
       .itinerary-table.mode-edit tbody tr {
-        grid-template-areas:
-          "stop stop"
-          "start start"
-          "end end"
-          "duration duration"
-          "edit sort";
+        grid-template-columns: minmax(0, 1fr) minmax(40px, auto) minmax(40px, auto) minmax(36px, auto) minmax(52px, auto) minmax(44px, auto);
       }
+
+      .mode-usage .time-val {
+        font-size: 0.68rem;
+      }
+
+      .mode-usage .col-duration,
+      .mode-edit .duration-chip {
+        font-size: 0.6rem;
+      }
+
+      .duration-full { display: none; }
+      .duration-short { display: inline; }
 
       .time-picker-grid {
         grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 320px) {
+      .itinerary-table.mode-usage thead tr,
+      .itinerary-table.mode-usage tbody tr {
+        grid-template-columns: 32px minmax(0, 1fr) minmax(38px, auto) minmax(64px, auto) minmax(32px, auto);
       }
     }
 
@@ -1336,16 +1606,16 @@
   </style>
 </head>
 <body>
+  <p class="viewer-banner hidden" id="viewer-banner" role="status">Salt okunur — programı görüntülüyorsunuz</p>
   <header class="top-bar">
     <div class="tabs-bar" id="tabs-bar">
       <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
       <div class="data-actions">
-        <button type="button" class="btn-data" data-action="export-data" aria-label="Veriyi yedekle">Yedekle</button>
-        <button type="button" class="btn-data" data-action="import-data" aria-label="Veriyi geri yükle">Geri yükle</button>
+        <button type="button" class="btn-data btn-share" data-action="share-link" aria-label="Link paylaş"><span class="btn-label-long">Link paylaş</span><span class="btn-label-short">Paylaş</span></button>
+        <button type="button" class="btn-data" data-action="export-html" aria-label="HTML olarak kaydet"><span class="btn-label-long">HTML kaydet</span><span class="btn-label-short">HTML</span></button>
       </div>
     </div>
-    <input type="file" id="import-file" accept=".json,application/json" hidden aria-hidden="true" />
   </header>
   <main id="day-panels"></main>
 
@@ -1399,7 +1669,7 @@
   <script>
     const STORAGE_KEY = "geziRota_v2";
 
-    const DEFAULT_DAYS = [
+    const DEFAULT_DAYS = /*DEFAULT_DAYS_START*/[
       {
         id: "day1",
         tabLabel: "1. Gün",
@@ -1423,10 +1693,14 @@
           { time: "22:00", stop: "Cunda merkezde serbest zaman ve Airbnb'ye dönüş", endTime: "22:30" }
         ]
       }
-    ];
+    ]/*DEFAULT_DAYS_END*/;
 
+    const EMBEDDED_SNAPSHOT = /*EMBED_START*/ null /*EMBED_END*/;
+    const EMBEDDED_SNAPSHOT_ID = /*EMBED_ID_START*/ null /*EMBED_ID_END*/;
+
+    let isViewerMode = false;
     let days = JSON.parse(JSON.stringify(DEFAULT_DAYS));
-    let state = loadState();
+    let state = { activeDayId: days[0]?.id || null, days: {} };
     let notesDebounce = null;
     let titleDebounce = null;
     let pickerTarget = null;
@@ -1492,6 +1766,22 @@
       const h = Math.floor(mins / 60);
       const m = mins % 60;
       return `${h} saat ${m} dk`;
+    }
+
+    function formatDurationShort(mins) {
+      if (mins <= 0) return "—";
+      if (mins % 60 === 0) return `${mins / 60}s`;
+      if (mins < 60) return `${mins}dk`;
+      const h = Math.floor(mins / 60);
+      const m = mins % 60;
+      return m ? `${h}s${m}dk` : `${h}s`;
+    }
+
+    function renderDurationLabel(mins) {
+      const full = formatDurationMinutes(mins);
+      const short = formatDurationShort(mins);
+      if (full === short) return full;
+      return `<span class="duration-full">${full}</span><span class="duration-short">${short}</span>`;
     }
 
     function formatDelta(mins) {
@@ -1628,7 +1918,82 @@
       };
     }
 
+    function getEmbeddedSnapshot() {
+      if (!EMBEDDED_SNAPSHOT || typeof EMBEDDED_SNAPSHOT !== "object") return null;
+      if (!Array.isArray(EMBEDDED_SNAPSHOT.daysData) || EMBEDDED_SNAPSHOT.daysData.length === 0) return null;
+      return EMBEDDED_SNAPSHOT;
+    }
+
+    function normalizeSavedDayState(savedDay, day) {
+      return {
+        activeView: savedDay?.activeView === "notes" ? "notes" : "program",
+        mode: savedDay?.mode === "edit" ? "edit" : "usage",
+        notes: typeof savedDay?.notes === "string" ? savedDay.notes : day.notes || "",
+        items: savedDay?.items && typeof savedDay.items === "object" ? savedDay.items : {}
+      };
+    }
+
+    function sanitizeDayCompletion(dayState, itemCount) {
+      Object.values(dayState.items).forEach((item) => {
+        if (item?.actualEnd) item.actualEnd = snapToHalfHour(item.actualEnd);
+      });
+      Object.keys(dayState.items).forEach((key) => {
+        if (!isItemDone(dayState.items[key])) delete dayState.items[key];
+      });
+      sanitizeCompletionOrder(dayState, itemCount);
+    }
+
+    function parseSnapshotPayload(saved) {
+      if (!saved?.daysData || !Array.isArray(saved.daysData) || saved.daysData.length === 0) {
+        return null;
+      }
+
+      const nextDays = saved.daysData;
+      const nextState = {
+        activeDayId: saved.activeDayId && nextDays.some((d) => d.id === saved.activeDayId)
+          ? saved.activeDayId
+          : nextDays[0].id,
+        days: {}
+      };
+
+      nextDays.forEach((day) => {
+        const savedDay = saved.days?.[day.id];
+        nextState.days[day.id] = savedDay
+          ? normalizeSavedDayState(savedDay, day)
+          : getDefaultDayState(day);
+        sanitizeDayCompletion(nextState.days[day.id], day.items.length);
+      });
+
+      return {
+        days: nextDays,
+        state: nextState,
+        embedId: saved.snapshotId || EMBEDDED_SNAPSHOT_ID || null
+      };
+    }
+
+    function applySnapshotPayload(saved) {
+      const parsed = parseSnapshotPayload(saved);
+      if (!parsed) return false;
+      days = parsed.days;
+      state = parsed.state;
+      if (parsed.embedId) localStorage.setItem(STORAGE_KEY + "_embedId", parsed.embedId);
+      return true;
+    }
+
     function loadState() {
+      const embedded = getEmbeddedSnapshot();
+      const storedEmbedId = localStorage.getItem(STORAGE_KEY + "_embedId");
+      const embeddedId = embedded?.snapshotId || EMBEDDED_SNAPSHOT_ID;
+
+      if (embedded && embeddedId && storedEmbedId !== embeddedId) {
+        const parsed = parseSnapshotPayload(embedded);
+        if (parsed) {
+          days = parsed.days;
+          if (parsed.embedId) localStorage.setItem(STORAGE_KEY + "_embedId", parsed.embedId);
+          return { state: parsed.state, persist: true };
+        }
+      }
+
       const defaults = {
         activeDayId: days[0]?.id || null,
         days: {}
@@ -1643,7 +2008,7 @@
           const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
           if (v1) saved = { ...v1, daysData: null };
         }
-        if (!saved) return defaults;
+        if (!saved) return { state: defaults, persist: false };
 
         if (saved.daysData && Array.isArray(saved.daysData)) {
           days = saved.daysData;
@@ -1656,31 +2021,52 @@
         days.forEach((day) => {
           const savedDay = saved.days?.[day.id];
           if (!savedDay) return;
-          defaults.days[day.id] = {
-            activeView: savedDay.activeView === "notes" ? "notes" : "program",
-            mode: savedDay.mode === "edit" ? "edit" : "usage",
-            notes: typeof savedDay.notes === "string" ? savedDay.notes : day.notes || "",
-            items: savedDay.items && typeof savedDay.items === "object" ? savedDay.items : {}
-          };
-          Object.values(defaults.days[day.id].items).forEach((item) => {
-            if (item?.actualEnd) item.actualEnd = snapToHalfHour(item.actualEnd);
-          });
-          Object.keys(defaults.days[day.id].items).forEach((key) => {
-            if (!isItemDone(defaults.days[day.id].items[key])) {
-              delete defaults.days[day.id].items[key];
-            }
-          });
-          sanitizeCompletionOrder(defaults.days[day.id], day.items.length);
+          defaults.days[day.id] = normalizeSavedDayState(savedDay, day);
+          sanitizeDayCompletion(defaults.days[day.id], day.items.length);
         });
       } catch (_) {
         /* ignore corrupt storage */
       }
 
-      return defaults;
+      return { state: defaults, persist: false };
     }
 
     function saveState() {
+      if (isViewerMode) return;
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, daysData: days }));
+    }
+
+    function initViewerFromHash() {
+      const hash = location.hash;
+      if (!hash.startsWith("#t=")) return false;
+      try {
+        const json = LZString.decompressFromEncodedURIComponent(hash.slice(3));
+        if (!json) return false;
+        const saved = JSON.parse(json);
+        const parsed = parseSnapshotPayload(saved);
+        if (!parsed) return false;
+        days = parsed.days;
+        state = parsed.state;
+        days.forEach((day) => {
+          const ds = ensureDayState(day.id);
+          ds.mode = "viewer";
+          ds.activeView = ds.activeView || "program";
+        });
+        isViewerMode = true;
+        document.body.classList.add("viewer-mode");
+        document.getElementById("viewer-banner")?.classList.remove("hidden");
+        document.title = "Gezi Rota — Program";
+        return true;
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function bootstrapState() {
+      if (initViewerFromHash()) return;
+      const loaded = loadState();
+      state = loaded.state;
+      if (loaded.persist) saveState();
     }
 
     function ensureDayState(dayId) {
@@ -1876,12 +2262,22 @@
     }
 
     function renderTableHead(mode) {
+      if (mode === "viewer") {
+        return `
+          <tr>
+            <th class="col-stop">Durak</th>
+            <th class="col-start">Başlangıç</th>
+            <th class="col-end">Bitiş</th>
+            <th class="col-duration">Süre</th>
+          </tr>
+        `;
+      }
       if (mode === "edit") {
         return `
           <tr>
             <th class="col-start">Başlangıç</th>
             <th class="col-end">Bitiş</th>
-            <th>Durak</th>
+            <th class="col-stop">Durak</th>
             <th class="col-edit"></th>
             <th class="col-duration">Süre</th>
             <th class="col-sort"></th>
@@ -1893,7 +2289,7 @@
           <th class="col-check"></th>
           <th class="col-start">Başlangıç</th>
           <th class="col-end">Bitiş</th>
-          <th>Durak</th>
+          <th class="col-stop">Durak</th>
           <th class="col-duration">Süre</th>
         </tr>
       `;
@@ -1904,6 +2300,21 @@
       const slot = schedule[index];
       const itemCount = day.items.length;
       const isLast = index === itemCount - 1;
+
+      if (mode === "viewer") {
+        return `
+          <tr class="task-row" data-index="${index}">
+            <td class="col-stop" title="${escapeHtml(item.stop)}">${renderStop(item)}</td>
+            <td class="col-start" data-label="Başlangıç">
+              <div class="time-cell"><span class="time-val">${slot.plannedStart}</span></div>
+            </td>
+            <td class="col-end" data-label="Bitiş">
+              <div class="time-cell"><span class="time-val">${slot.plannedEnd}</span></div>
+            </td>
+            <td class="col-duration" data-label="Süre">${renderDurationLabel(slot.slotDuration)}</td>
+          </tr>
+        `;
+      }
 
       if (mode === "edit") {
         const startTime = slot.plannedStart;
@@ -1935,7 +2346,7 @@
             <td class="col-duration" data-label="Süre">
               <button type="button" class="duration-chip" data-action="open-duration-picker"
                 data-day-id="${day.id}" data-index="${index}" data-current="${slot.slotDuration}"
-                aria-label="Süre seç">${formatDurationMinutes(slot.slotDuration)}</button>
+                aria-label="Süre seç">${renderDurationLabel(slot.slotDuration)}</button>
             </td>
             <td class="col-sort">
               <div class="sort-btns">
@@ -1970,9 +2381,12 @@
         ? `<div class="time-cell">
             <button type="button" class="time-chip" aria-label="Bitiş saati seç"
               data-action="open-picker" data-day-id="${day.id}" data-index="${index}"
-              data-field="actualEnd" data-current="${displayEnd}">${formatClockLabel(slot.adjustedEndMin)}</button>
-            <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}">Şimdi</button>
-            ${endDelta !== 0 ? `<span class="delta-inline ${endDelta > 0 ? "late" : "early"}">${formatDelta(endDelta).text}</span>` : ""}
+              data-field="actualEnd" data-current="${displayEnd}"
+              title="Plan: ${slot.plannedEnd}${endDelta !== 0 ? " · " + formatDelta(endDelta).text : ""}">${formatClockLabel(slot.adjustedEndMin)}</button>
+            <button type="button" class="btn-now" data-action="now" data-day-id="${day.id}" data-index="${index}" aria-label="Şimdi">
+              <span class="btn-now-long">Şimdi</span><span class="btn-now-short" aria-hidden="true">⏱</span>
+            </button>
+            ${endDelta !== 0 ? `<span class="delta-inline delta-mobile-hide ${endDelta > 0 ? "late" : "early"}">${formatDelta(endDelta).text}</span>` : ""}
           </div>`
         : `<div class="time-cell">${renderCompactTime(slot.plannedEnd, displayEnd, endDelta, slot.adjustedEndMin)}</div>`;
 
@@ -1988,14 +2402,14 @@
           </td>
           <td class="col-end" data-label="Bitiş">${endCell}</td>
           <td class="col-stop" title="${escapeHtml(item.stop)}">${renderStop(item)}</td>
-          <td class="col-duration" data-label="Süre">${formatDurationMinutes(slot.slotDuration)}</td>
+          <td class="col-duration" data-label="Süre">${renderDurationLabel(slot.slotDuration)}</td>
         </tr>
       `;
     }
 
     function renderDayPanel(day) {
       const dayState = ensureDayState(day.id);
-      const mode = dayState.mode || "usage";
+      const mode = isViewerMode ? "viewer" : (dayState.mode || "usage");
       const schedule = computeSchedule(day.items, dayState);
       const progress = getDayProgress(day, dayState);
       const delayMin = getDayDelay(schedule);
@@ -2022,10 +2436,10 @@
                         placeholder="Gün başlığı" data-action="day-title" data-day-id="${day.id}"
                         aria-label="Gün başlığı" />
                     </label>`
-                  : `<h2 class="day-title">📅 ${day.title}</h2>`}
-                ${isEdit ? "" : `<span class="delay-summary${delayClass}">${delayLabel}</span>`}
+                  : `<h2 class="day-title">📅 ${escapeHtml(day.title)}</h2>`}
+                ${isEdit || isViewerMode ? "" : `<span class="delay-summary${delayClass}">${delayLabel}</span>`}
               </div>
-              ${isEdit ? "" : `
+              ${isEdit || isViewerMode ? "" : `
               <div class="progress-wrap">
                 <div class="progress-label">${progress.done} / ${progress.total} tamamlandı</div>
                 <div class="progress-bar" role="progressbar" aria-valuenow="${progress.pct}" aria-valuemin="0" aria-valuemax="100">
@@ -2034,34 +2448,37 @@
               </div>`}
             </div>
 
-            <div class="sub-bar-wrap">
-              <div class="sub-bar" role="tablist" aria-label="${day.tabLabel} görünümü">
-                <button type="button" class="sub-tab${dayState.activeView === "program" ? " active" : ""}"
-                  role="tab" aria-selected="${dayState.activeView === "program"}"
-                  data-action="view" data-day-id="${day.id}" data-view="program">Program</button>
-                <button type="button" class="sub-tab${dayState.activeView === "notes" ? " active" : ""}"
-                  role="tab" aria-selected="${dayState.activeView === "notes"}"
-                  data-action="view" data-day-id="${day.id}" data-view="notes">Notlar</button>
+            <div class="day-toolbar">
+              <div class="sub-bar-wrap">
+                <div class="sub-bar" role="tablist" aria-label="${day.tabLabel} görünümü">
+                  <button type="button" class="sub-tab${dayState.activeView === "program" ? " active" : ""}"
+                    role="tab" aria-selected="${dayState.activeView === "program"}"
+                    data-action="view" data-day-id="${day.id}" data-view="program">Program</button>
+                  <button type="button" class="sub-tab${dayState.activeView === "notes" ? " active" : ""}"
+                    role="tab" aria-selected="${dayState.activeView === "notes"}"
+                    data-action="view" data-day-id="${day.id}" data-view="notes">Notlar</button>
+                </div>
               </div>
+              ${!isViewerMode && dayState.activeView === "program" ? `
+              <div class="day-actions">
+                <div class="mode-toggle">
+                  <button type="button" class="mode-btn${!isEdit ? " active" : ""}"
+                    data-action="set-mode" data-day-id="${day.id}" data-mode="usage">Kullanım</button>
+                  <button type="button" class="mode-btn${isEdit ? " active edit-active" : ""}"
+                    data-action="set-mode" data-day-id="${day.id}" data-mode="edit">Düzenleme</button>
+                </div>
+                <div class="day-actions-right">
+                  ${isEdit
+                    ? `<button type="button" class="btn-add" data-action="add-task" data-day-id="${day.id}">+ Yeni durak</button>
+                       <button type="button" class="btn-delete-day" data-action="delete-day" data-day-id="${day.id}"
+                         ${days.length <= 1 ? "disabled" : ""}>Günü sil</button>`
+                    : `<button type="button" class="btn-reset" data-action="reset" data-day-id="${day.id}">Sıfırla</button>`}
+                </div>
+              </div>` : ""}
             </div>
 
             <div class="day-body">
               <div class="view-panel${dayState.activeView === "program" ? " active" : ""}" data-view-panel="program">
-                <div class="day-actions">
-                  <div class="mode-toggle">
-                    <button type="button" class="mode-btn${!isEdit ? " active" : ""}"
-                      data-action="set-mode" data-day-id="${day.id}" data-mode="usage">Kullanım</button>
-                    <button type="button" class="mode-btn${isEdit ? " active edit-active" : ""}"
-                      data-action="set-mode" data-day-id="${day.id}" data-mode="edit">Düzenleme</button>
-                  </div>
-                  <div class="day-actions-right">
-                    ${isEdit
-                      ? `<button type="button" class="btn-add" data-action="add-task" data-day-id="${day.id}">+ Yeni durak</button>
-                         <button type="button" class="btn-delete-day" data-action="delete-day" data-day-id="${day.id}"
-                           ${days.length <= 1 ? "disabled" : ""}>Günü sil</button>`
-                      : `<button type="button" class="btn-reset" data-action="reset" data-day-id="${day.id}">Günü sıfırla</button>`}
-                  </div>
-                </div>
                 <div class="itinerary-wrap">
                   <table class="itinerary-table mode-${mode}">
                     <thead>${renderTableHead(mode)}</thead>
@@ -2072,10 +2489,12 @@
                 </div>
               </div>
               <div class="view-panel${dayState.activeView === "notes" ? " active" : ""}" data-view-panel="notes">
-                <textarea class="notes-area"
-                  placeholder="Bu gün için notlar, adresler, rezervasyon bilgileri..."
-                  data-action="notes" data-day-id="${day.id}"
-                >${escapeHtml(dayState.notes)}</textarea>
+                ${isViewerMode
+                  ? `<div class="notes-readonly">${escapeHtml(dayState.notes || "")}</div>`
+                  : `<textarea class="notes-area"
+                      placeholder="Bu gün için notlar, adresler, rezervasyon bilgileri..."
+                      data-action="notes" data-day-id="${day.id}"
+                    >${escapeHtml(dayState.notes)}</textarea>`}
               </div>
             </div>
           </div>
@@ -2415,59 +2834,102 @@
       renderApp();
     }
 
-    function exportData() {
+    function generateSnapshotId() {
+      return "snap_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 10);
+    }
+
+    function buildShareSnapshot() {
       saveState();
-      const payload = JSON.stringify({ ...state, daysData: days }, null, 2);
-      const blob = new Blob([payload], { type: "application/json" });
+      const snapshotId = generateSnapshotId();
+      const shareDays = {};
+      days.forEach((day) => {
+        const ds = state.days[day.id];
+        shareDays[day.id] = {
+          activeView: "program",
+          mode: "usage",
+          notes: typeof ds?.notes === "string" ? ds.notes : day.notes || "",
+          items: {}
+        };
+      });
+      return {
+        snapshotId,
+        savedAt: new Date().toISOString(),
+        activeDayId: state.activeDayId,
+        daysData: JSON.parse(JSON.stringify(days)),
+        days: shareDays
+      };
+    }
+
+    function replaceBetweenMarkers(html, startMarker, endMarker, content) {
+      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp(esc(startMarker) + "[\\s\\S]*?" + esc(endMarker), "g");
+      return html.replace(re, startMarker + content + endMarker);
+    }
+
+    function getShareBaseUrl() {
+      if (location.protocol === "file:") {
+        return "https://kadirhancekmez.github.io/GeziRota/index.html";
+      }
+      if (location.pathname.endsWith(".html")) {
+        return location.origin + location.pathname;
+      }
+      const base = location.pathname.endsWith("/") ? location.pathname : `${location.pathname}/`;
+      return location.origin + base + "index.html";
+    }
+
+    function buildShareUrl() {
+      const snapshot = buildShareSnapshot();
+      const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(snapshot));
+      return `${getShareBaseUrl()}#t=${compressed}`;
+    }
+
+    async function shareLink() {
+      const url = buildShareUrl();
+      if (url.length > 8000) {
+        showToast("Program çok uzun — HTML kaydet ile paylaşın");
+        return;
+      }
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: "Gezi Rota", text: "Tatil programı", url });
+          return;
+        } catch (err) {
+          if (err?.name === "AbortError") return;
+        }
+      }
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast("Link kopyalandı — WhatsApp'tan gönderin");
+      } catch (_) {
+        showToast("Link kopyalanamadı — HTML kaydet ile paylaşın");
+      }
+    }
+
+    function exportHtml() {
+      const snapshot = buildShareSnapshot();
+      const daysJson = JSON.stringify(snapshot.daysData, null, 2)
+        .split("\n")
+        .map((line, i) => (i === 0 ? line : "    " + line))
+        .join("\n");
+
+      let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+      html = replaceBetweenMarkers(html, "/*DEFAULT_DAYS_START*/", "/*DEFAULT_DAYS_END*/", daysJson);
+      html = replaceBetweenMarkers(html, "/*EMBED_START*/", "/*EMBED_END*/", JSON.stringify(snapshot));
+      html = replaceBetweenMarkers(
+        html,
+        "/*EMBED_ID_START*/",
+        "/*EMBED_ID_END*/",
+        JSON.stringify(snapshot.snapshotId)
+      );
+
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `gezi-rota-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `gezi-rota-${new Date().toISOString().slice(0, 10)}.html`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast("Yedek indirildi");
-    }
-
-    function importData(file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const saved = JSON.parse(reader.result);
-          if (!saved || typeof saved !== "object") throw new Error("invalid");
-          if (!saved.daysData || !Array.isArray(saved.daysData) || saved.daysData.length === 0) {
-            showToast("Geçersiz yedek dosyası");
-            return;
-          }
-          days = saved.daysData;
-          state = {
-            activeDayId: saved.activeDayId && days.some((d) => d.id === saved.activeDayId)
-              ? saved.activeDayId
-              : days[0].id,
-            days: {}
-          };
-          days.forEach((day) => {
-            const savedDay = saved.days?.[day.id];
-            state.days[day.id] = savedDay
-              ? {
-                  activeView: savedDay.activeView === "notes" ? "notes" : "program",
-                  mode: savedDay.mode === "edit" ? "edit" : "usage",
-                  notes: typeof savedDay.notes === "string" ? savedDay.notes : day.notes || "",
-                  items: savedDay.items && typeof savedDay.items === "object" ? savedDay.items : {}
-                }
-              : getDefaultDayState(day);
-            sanitizeCompletionOrder(state.days[day.id], day.items.length);
-          });
-          closeEditTask();
-          closeTimePicker();
-          closeDurationPicker();
-          saveState();
-          renderApp();
-          showToast("Yedek geri yüklendi");
-        } catch (_) {
-          showToast("Dosya okunamadı");
-        }
-      };
-      reader.readAsText(file);
+      showToast("HTML indirildi — bu dosyayı paylaşın");
     }
 
     function bindEvents() {
@@ -2479,22 +2941,16 @@
           addDay();
           return;
         }
-        if (e.target.closest("[data-action=export-data]")) {
-          exportData();
+        if (e.target.closest("[data-action=share-link]")) {
+          shareLink();
           return;
         }
-        if (e.target.closest("[data-action=import-data]")) {
-          document.getElementById("import-file").click();
+        if (e.target.closest("[data-action=export-html]")) {
+          exportHtml();
           return;
         }
         const tab = e.target.closest(".day-tab");
         if (tab) selectDay(tab.dataset.dayId);
-      });
-
-      document.getElementById("import-file").addEventListener("change", (e) => {
-        const file = e.target.files?.[0];
-        if (file) importData(file);
-        e.target.value = "";
       });
 
       document.addEventListener("keydown", (e) => {
@@ -2613,6 +3069,7 @@
       renderApp();
     }
 
+    bootstrapState();
     initTimePicker();
     renderApp();
 

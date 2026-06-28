@@ -1,5 +1,13 @@
-const CACHE = "gezi-rota-v1";
-const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
+const CACHE = "gezi-rota-v2";
+const ASSETS = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icon.svg",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  "./lz-string.min.js"
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(

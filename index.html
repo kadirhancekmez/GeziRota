@@ -76,49 +76,26 @@
     .tabs-bar {
       align-items: center;
       display: flex;
+      flex-wrap: wrap;
       gap: 0.5rem;
       margin: 0 auto;
       max-width: 720px;
     }
 
-    .data-actions {
+    .admin-bar {
       display: flex;
-      flex-shrink: 0;
-      gap: 0.25rem;
-    }
-
-    .btn-data {
-      background: transparent;
-      border: 1px solid var(--border);
-      border-radius: var(--radius-pill);
-      color: var(--text-muted);
-      cursor: pointer;
-      font-family: inherit;
-      font-size: 0.68rem;
-      font-weight: 600;
-      padding: 0.35rem 0.55rem;
-      white-space: nowrap;
-    }
-
-    .btn-data:hover {
-      background: var(--accent-soft);
-      border-color: var(--accent-border);
-      color: var(--accent);
-    }
-
-    .btn-data.btn-save-now {
-      background: var(--success-soft);
-      border-color: var(--success-border);
-      color: var(--success);
+      flex: 1 1 100%;
+      flex-direction: column;
+      gap: 0.35rem;
+      min-width: 0;
+      width: 100%;
     }
 
     .share-link-row {
       align-items: center;
       display: flex;
-      flex: 1 1 100%;
       gap: 0.35rem;
       min-width: 0;
-      order: 4;
       width: 100%;
     }
 
@@ -161,14 +138,84 @@
       background: var(--accent-soft-md);
     }
 
+    .admin-bar-footer {
+      align-items: center;
+      display: flex;
+      gap: 0.5rem;
+      justify-content: space-between;
+      min-width: 0;
+      width: 100%;
+    }
+
     .save-status {
       color: var(--text-muted);
-      flex: 1 1 100%;
-      font-size: 0.58rem;
+      flex: 1;
+      font-size: 0.62rem;
       font-weight: 500;
       line-height: 1.25;
-      order: 5;
-      text-align: center;
+      min-width: 0;
+    }
+
+    .backup-menu {
+      flex-shrink: 0;
+      position: relative;
+    }
+
+    .backup-menu-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 600;
+      list-style: none;
+      min-height: 32px;
+      padding: 0.35rem 0.65rem;
+    }
+
+    .backup-menu-toggle::-webkit-details-marker { display: none; }
+
+    .backup-menu[open] .backup-menu-toggle {
+      background: var(--accent-soft);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    .backup-menu-actions {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 9.5rem;
+      padding: 0.35rem;
+      position: absolute;
+      right: 0;
+      top: calc(100% + 0.25rem);
+      z-index: 25;
+    }
+
+    .backup-menu-btn {
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.45rem 0.65rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    .backup-menu-btn:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
     }
 
     body.viewer-mode .save-status {
@@ -186,8 +233,7 @@
     }
 
     body.viewer-mode .btn-add-day,
-    body.viewer-mode .data-actions,
-    body.viewer-mode .share-link-row,
+    body.viewer-mode .admin-bar,
     body.viewer-mode .day-actions,
     body.viewer-mode .mode-toggle,
     body.viewer-mode .btn-reset,
@@ -1056,23 +1102,8 @@
         padding: 0.4rem 0.65rem;
       }
 
-      .data-actions {
-        flex: 1 1 100%;
-        flex-wrap: wrap;
-        gap: 0.3rem;
+      .admin-bar {
         order: 3;
-      }
-
-      .data-actions .btn-data {
-        flex: 1;
-        font-size: 0.62rem;
-        min-height: 44px;
-        min-width: 0;
-        padding: 0.35rem 0.4rem;
-      }
-
-      .share-link-row {
-        order: 4;
       }
 
       .share-link-input {
@@ -1086,8 +1117,8 @@
         padding: 0.35rem 0.55rem;
       }
 
-      .save-status {
-        order: 5;
+      .backup-menu-toggle {
+        min-height: 44px;
       }
 
       .btn-label-long { display: none; }
@@ -1715,18 +1746,24 @@
     <div class="tabs-bar" id="tabs-bar">
       <div class="tabs" id="tabs" role="tablist" aria-label="Günler"></div>
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
-      <div class="data-actions">
-        <button type="button" class="btn-data btn-save-now" data-action="save-now" aria-label="JSON olarak kaydet"><span class="btn-label-long">JSON kaydet</span><span class="btn-label-short">Kaydet</span></button>
-        <button type="button" class="btn-data" data-action="import-json" aria-label="JSON yedek yükle"><span class="btn-label-long">Yedek yükle</span><span class="btn-label-short">Yükle</span></button>
-        <button type="button" class="btn-data" data-action="export-html" aria-label="HTML olarak kaydet"><span class="btn-label-long">HTML kaydet</span><span class="btn-label-short">HTML</span></button>
-      </div>
-      <div class="share-link-row" id="share-link-row">
-        <span class="share-link-label">Link:</span>
-        <input type="text" class="share-link-input" id="share-link-input" readonly aria-label="Paylaşım linki" />
-        <button type="button" class="btn-copy-link" data-action="copy-share-link" aria-label="Linki kopyala">Kopyala</button>
+      <div class="admin-bar" id="admin-bar">
+        <div class="share-link-row" id="share-link-row">
+          <span class="share-link-label">Link:</span>
+          <input type="text" class="share-link-input" id="share-link-input" readonly aria-label="Paylaşım linki" />
+          <button type="button" class="btn-copy-link" data-action="copy-share-link" aria-label="Linki kopyala">Kopyala</button>
+        </div>
+        <div class="admin-bar-footer">
+          <span class="save-status" id="save-status">Otomatik kaydediliyor…</span>
+          <details class="backup-menu" id="backup-menu">
+            <summary class="backup-menu-toggle">Yedek</summary>
+            <div class="backup-menu-actions">
+              <button type="button" class="backup-menu-btn" data-action="export-json">Dosyaya indir</button>
+              <button type="button" class="backup-menu-btn" data-action="import-json">Dosyadan yükle</button>
+            </div>
+          </details>
+        </div>
       </div>
       <input type="file" id="import-json-input" accept=".json,application/json" hidden aria-hidden="true" />
-      <span class="save-status" id="save-status">Veri tarayıcıda tutulmaz — JSON kaydet / yedek yükle</span>
     </div>
   </header>
   <main id="day-panels"></main>
@@ -1779,6 +1816,7 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
+    const STORAGE_KEY = "geziRota_v3";
     const STORAGE_VERSION = 3;
 
     const DEFAULT_DAYS = /*DEFAULT_DAYS_START*/[
@@ -2092,23 +2130,52 @@
       return true;
     }
 
-    function clearLegacyStorage() {
+    function readStoredPayload() {
       try {
-        localStorage.removeItem("geziRota_v2");
-        localStorage.removeItem("geziRota_v1");
-        localStorage.removeItem("geziRota_v2_embedId");
+        let saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!saved) {
+          saved = JSON.parse(localStorage.getItem("geziRota_v2"));
+          if (saved?.daysData?.length) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...saved, version: STORAGE_VERSION }));
+          }
+        }
+        if (!saved) {
+          const v1 = JSON.parse(localStorage.getItem("geziRota_v1"));
+          if (v1) saved = { ...v1, daysData: null };
+        }
+        return saved;
       } catch (_) {
-        /* ignore */
+        return null;
       }
     }
 
+    function buildStoragePayload() {
+      return {
+        kind: "admin-backup",
+        version: STORAGE_VERSION,
+        savedAt: new Date().toISOString(),
+        activeDayId: state.activeDayId,
+        daysData: JSON.parse(JSON.stringify(days)),
+        days: JSON.parse(JSON.stringify(state.days))
+      };
+    }
+
     function loadState() {
+      const saved = readStoredPayload();
+      if (saved?.daysData?.length) {
+        const parsed = parseSnapshotPayload(saved);
+        if (parsed) {
+          days = parsed.days;
+          return { state: parsed.state, savedAt: saved.savedAt || null };
+        }
+      }
+
       const embedded = getEmbeddedSnapshot();
       if (embedded) {
         const parsed = parseSnapshotPayload(embedded);
         if (parsed) {
           days = parsed.days;
-          return { state: parsed.state };
+          return { state: parsed.state, savedAt: null };
         }
       }
 
@@ -2119,7 +2186,7 @@
       days.forEach((day) => {
         defaults.days[day.id] = getDefaultDayState(day);
       });
-      return { state: defaults };
+      return { state: defaults, savedAt: null };
     }
 
     function requireEdit() {
@@ -2146,13 +2213,50 @@
       });
     }
 
-    function saveState() {
-      /* Oturum belleğinde tutulur; tarayıcı depolaması kullanılmaz. */
+    function formatSaveTime(iso) {
+      if (!iso) return "";
+      try {
+        return new Date(iso).toLocaleString("tr-TR", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch (_) {
+        return "";
+      }
     }
 
-    function manualSave() {
-      if (!requireEdit()) return;
-      exportJson();
+    function updateSaveStatus(iso) {
+      const el = document.getElementById("save-status");
+      if (!el || isViewerMode) return;
+      el.textContent = iso
+        ? `Otomatik kaydedildi · ${formatSaveTime(iso)}`
+        : "Otomatik kaydediliyor…";
+    }
+
+    function saveState() {
+      if (isViewerMode) return;
+      try {
+        const payload = buildStoragePayload();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        updateSaveStatus(payload.savedAt);
+      } catch (_) {
+        showToast("Kaydedilemedi — depolama dolu olabilir");
+      }
+    }
+
+    function setupAutoSave() {
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden" && !isViewerMode) saveState();
+      });
+      window.addEventListener("pagehide", () => {
+        if (!isViewerMode) saveState();
+      });
+    }
+
+    function closeBackupMenu() {
+      document.getElementById("backup-menu")?.removeAttribute("open");
     }
 
     function initViewerFromUrl() {
@@ -2183,10 +2287,11 @@
     }
 
     function bootstrapState() {
-      clearLegacyStorage();
       if (initViewerFromUrl()) return;
       const loaded = loadState();
       state = loaded.state;
+      if (!loaded.savedAt) saveState();
+      else updateSaveStatus(loaded.savedAt);
     }
 
     function ensureDayState(dayId) {
@@ -3014,14 +3119,7 @@
     }
 
     function buildAdminSnapshot() {
-      return {
-        kind: "admin-backup",
-        version: STORAGE_VERSION,
-        savedAt: new Date().toISOString(),
-        activeDayId: state.activeDayId,
-        daysData: JSON.parse(JSON.stringify(days)),
-        days: JSON.parse(JSON.stringify(state.days))
-      };
+      return buildStoragePayload();
     }
 
     function buildShareSnapshot() {
@@ -3045,13 +3143,7 @@
       };
     }
 
-    function replaceBetweenMarkers(html, startMarker, endMarker, content) {
-      const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const re = new RegExp(esc(startMarker) + "[\\s\\S]*?" + esc(endMarker), "g");
-      return html.replace(re, startMarker + content + endMarker);
-    }
-
-    function getShareBaseUrl() {
+    function bindEvents() {
       if (location.protocol === "file:") {
         return "https://kadirhancekmez.github.io/GeziRota/index.html";
       }
@@ -3079,11 +3171,13 @@
       a.download = `gezi-rota-yedek-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      showToast("JSON yedek indirildi");
+      closeBackupMenu();
+      showToast("Yedek dosyası indirildi");
     }
 
     function triggerImportJson() {
       if (!requireEdit()) return;
+      closeBackupMenu();
       document.getElementById("import-json-input")?.click();
     }
 
@@ -3099,6 +3193,8 @@
           }
           if (!window.confirm("Mevcut programın üzerine yazılsın mı?")) return;
           applySnapshotPayload(saved);
+          saveState();
+          updateShareLinkField();
           renderApp();
           showToast("Yedek yüklendi");
         } catch (_) {
@@ -3109,34 +3205,7 @@
       reader.readAsText(file);
     }
 
-    function exportHtml() {
-      const snapshot = buildShareSnapshot();
-      const daysJson = JSON.stringify(snapshot.daysData, null, 2)
-        .split("\n")
-        .map((line, i) => (i === 0 ? line : "    " + line))
-        .join("\n");
-
-      let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
-      html = replaceBetweenMarkers(html, "/*DEFAULT_DAYS_START*/", "/*DEFAULT_DAYS_END*/", daysJson);
-      html = replaceBetweenMarkers(html, "/*EMBED_START*/", "/*EMBED_END*/", JSON.stringify(snapshot));
-      html = replaceBetweenMarkers(
-        html,
-        "/*EMBED_ID_START*/",
-        "/*EMBED_ID_END*/",
-        JSON.stringify(snapshot.snapshotId)
-      );
-
-      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `gezi-rota-${new Date().toISOString().slice(0, 10)}.html`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showToast("HTML indirildi — bu dosyayı paylaşın");
-    }
-
-    function bindEvents() {
+    function getShareBaseUrl() {
       if (eventsBound) return;
       eventsBound = true;
 
@@ -3150,20 +3219,16 @@
           addDay();
           return;
         }
-        if (e.target.closest("[data-action=save-now]")) {
-          manualSave();
-          return;
-        }
         if (e.target.closest("[data-action=copy-share-link]")) {
           copyShareLink();
           return;
         }
-        if (e.target.closest("[data-action=import-json]")) {
-          triggerImportJson();
+        if (e.target.closest("[data-action=export-json]")) {
+          exportJson();
           return;
         }
-        if (e.target.closest("[data-action=export-html]")) {
-          exportHtml();
+        if (e.target.closest("[data-action=import-json]")) {
+          triggerImportJson();
           return;
         }
         const tab = e.target.closest(".day-tab");
@@ -3302,6 +3367,7 @@
     }
 
     bootstrapState();
+    setupAutoSave();
     initTimePicker();
     renderApp();
 

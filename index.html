@@ -106,16 +106,59 @@
       color: var(--accent);
     }
 
-    .btn-data.btn-share {
-      background: var(--accent-soft);
-      border-color: var(--accent-border);
-      color: var(--accent);
-    }
-
     .btn-data.btn-save-now {
       background: var(--success-soft);
       border-color: var(--success-border);
       color: var(--success);
+    }
+
+    .share-link-row {
+      align-items: center;
+      display: flex;
+      flex: 1 1 100%;
+      gap: 0.35rem;
+      min-width: 0;
+      order: 4;
+      width: 100%;
+    }
+
+    .share-link-label {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .share-link-input {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-pill);
+      color: var(--text);
+      flex: 1;
+      font-family: inherit;
+      font-size: 0.62rem;
+      min-height: 36px;
+      min-width: 0;
+      padding: 0.35rem 0.65rem;
+    }
+
+    .btn-copy-link {
+      background: var(--accent-soft);
+      border: 1px solid var(--accent-border);
+      border-radius: var(--radius-pill);
+      color: var(--accent);
+      cursor: pointer;
+      flex-shrink: 0;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 600;
+      min-height: 36px;
+      padding: 0.35rem 0.7rem;
+      white-space: nowrap;
+    }
+
+    .btn-copy-link:hover {
+      background: var(--accent-soft-md);
     }
 
     .save-status {
@@ -124,7 +167,7 @@
       font-size: 0.58rem;
       font-weight: 500;
       line-height: 1.25;
-      order: 4;
+      order: 5;
       text-align: center;
     }
 
@@ -144,6 +187,7 @@
 
     body.viewer-mode .btn-add-day,
     body.viewer-mode .data-actions,
+    body.viewer-mode .share-link-row,
     body.viewer-mode .day-actions,
     body.viewer-mode .mode-toggle,
     body.viewer-mode .btn-reset,
@@ -1027,6 +1071,25 @@
         padding: 0.35rem 0.4rem;
       }
 
+      .share-link-row {
+        order: 4;
+      }
+
+      .share-link-input {
+        font-size: 0.58rem;
+        min-height: 44px;
+      }
+
+      .btn-copy-link {
+        font-size: 0.62rem;
+        min-height: 44px;
+        padding: 0.35rem 0.55rem;
+      }
+
+      .save-status {
+        order: 5;
+      }
+
       .btn-label-long { display: none; }
       .btn-label-short { display: inline; }
       .btn-now-long { display: none; }
@@ -1654,9 +1717,13 @@
       <button type="button" class="btn-add-day" data-action="add-day" aria-label="Yeni gün ekle">+ Gün</button>
       <div class="data-actions">
         <button type="button" class="btn-data btn-save-now" data-action="save-now" aria-label="JSON olarak kaydet"><span class="btn-label-long">JSON kaydet</span><span class="btn-label-short">Kaydet</span></button>
-        <button type="button" class="btn-data btn-share" data-action="share-link" aria-label="Link paylaş"><span class="btn-label-long">Link paylaş</span><span class="btn-label-short">Paylaş</span></button>
         <button type="button" class="btn-data" data-action="import-json" aria-label="JSON yedek yükle"><span class="btn-label-long">Yedek yükle</span><span class="btn-label-short">Yükle</span></button>
         <button type="button" class="btn-data" data-action="export-html" aria-label="HTML olarak kaydet"><span class="btn-label-long">HTML kaydet</span><span class="btn-label-short">HTML</span></button>
+      </div>
+      <div class="share-link-row" id="share-link-row">
+        <span class="share-link-label">Link:</span>
+        <input type="text" class="share-link-input" id="share-link-input" readonly aria-label="Paylaşım linki" />
+        <button type="button" class="btn-copy-link" data-action="copy-share-link" aria-label="Linki kopyala">Kopyala</button>
       </div>
       <input type="file" id="import-json-input" accept=".json,application/json" hidden aria-hidden="true" />
       <span class="save-status" id="save-status">Veri tarayıcıda tutulmaz — JSON kaydet / yedek yükle</span>
@@ -2586,7 +2653,49 @@
       restoreViewerSnapshot();
       document.getElementById("tabs").innerHTML = days.map(renderTab).join("");
       document.getElementById("day-panels").innerHTML = days.map(renderDayPanel).join("");
+      updateShareLinkField();
       bindEvents();
+    }
+
+    function updateShareLinkField() {
+      const input = document.getElementById("share-link-input");
+      if (!input || isViewerMode) return;
+      try {
+        const url = buildShareUrl();
+        if (url.length > 8000) {
+          input.value = "Program çok uzun — HTML kaydet ile paylaşın";
+          delete input.dataset.copyable;
+        } else {
+          input.value = url;
+          input.dataset.copyable = "1";
+        }
+      } catch (_) {
+        input.value = "";
+        delete input.dataset.copyable;
+      }
+    }
+
+    async function copyShareLink() {
+      const input = document.getElementById("share-link-input");
+      if (!input?.dataset.copyable) {
+        showToast("Program çok uzun — HTML kaydet ile paylaşın");
+        return;
+      }
+      const url = input.value;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url);
+        } else {
+          input.focus();
+          input.select();
+          document.execCommand("copy");
+        }
+        showToast("Link kopyalandı");
+      } catch (_) {
+        input.focus();
+        input.select();
+        showToast("Kopyalanamadı — metni elle seçin");
+      }
     }
 
     function initTimePicker() {
@@ -2961,28 +3070,6 @@
       return `${base}${sep}t=${compressed}`;
     }
 
-    async function shareLink() {
-      const url = buildShareUrl();
-      if (url.length > 8000) {
-        showToast("Program çok uzun — HTML kaydet ile paylaşın");
-        return;
-      }
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: "Gezi Rota", text: "Tatil programı", url });
-          return;
-        } catch (err) {
-          if (err?.name === "AbortError") return;
-        }
-      }
-      try {
-        await navigator.clipboard.writeText(url);
-        showToast("Link kopyalandı — WhatsApp'tan gönderin");
-      } catch (_) {
-        showToast("Link kopyalanamadı — HTML kaydet ile paylaşın");
-      }
-    }
-
     function exportJson() {
       const snapshot = buildAdminSnapshot();
       const blob = new Blob([JSON.stringify(snapshot, null, 2)], { type: "application/json;charset=utf-8" });
@@ -3067,8 +3154,8 @@
           manualSave();
           return;
         }
-        if (e.target.closest("[data-action=share-link]")) {
-          shareLink();
+        if (e.target.closest("[data-action=copy-share-link]")) {
+          copyShareLink();
           return;
         }
         if (e.target.closest("[data-action=import-json]")) {
